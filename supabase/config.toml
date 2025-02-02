@@ -1,1 +1,4 @@
 project_id = "ktmqwhkywxogxktuqcfx"
+
+[functions.create-checkout]
+verify_jwt = true
