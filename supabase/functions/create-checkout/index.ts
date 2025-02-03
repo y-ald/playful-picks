@@ -21,13 +21,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     )
 
-    // Get the user from the auth header
-    const authHeader = req.headers.get('Authorization')!
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user } } = await supabaseClient.auth.getUser(token)
-
-    if (!user) {
-      throw new Error('User not authenticated')
+    // Get the user from the auth header if available
+    const authHeader = req.headers.get('Authorization')
+    let userId = null
+    
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user } } = await supabaseClient.auth.getUser(token)
+      if (user) {
+        userId = user.id
+        console.log('Creating checkout for authenticated user:', userId)
+      }
+    } else {
+      console.log('Creating checkout for anonymous user')
     }
 
     // Initialize Stripe
@@ -50,13 +56,13 @@ serve(async (req) => {
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer_email: user.email,
+      customer_email: shippingAddress.email, // Use shipping email for both anonymous and authenticated users
       line_items: lineItems,
       mode: 'payment',
       success_url: `${req.headers.get('origin')}/checkout/success`,
       cancel_url: `${req.headers.get('origin')}/cart`,
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         shipping_address: JSON.stringify(shippingAddress),
       },
     })
