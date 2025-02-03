@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import NewArrivals from './NewArrivals';
 
 const Hero = () => {
   return (
@@ -15,22 +16,23 @@ const Hero = () => {
             className="space-y-6"
           >
             <span className="inline-block px-4 py-2 bg-primary-light text-primary rounded-full text-sm font-medium">
-              Special Launch Offer - 20% Off
+              Spring Collection - 20% Off Kids Fashion
             </span>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Where Learning Meets Fun
+              Dress Your Little Ones in Style
             </h1>
             <p className="text-lg text-gray-600 max-w-md">
-              Discover our carefully curated collection of educational toys that spark creativity, 
-              encourage learning, and bring joy to every child's development journey.
+              Discover our delightful collection of children's clothing that combines 
+              comfort, style, and durability. From playful patterns to practical designs, 
+              we've got everything your kids need.
             </p>
             <div className="flex gap-4">
               <Link to="/shop" className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors">
-                Shop Now
+                Shop Collection
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link to="/about" className="inline-flex items-center px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors">
-                Learn More
+                Size Guide
               </Link>
             </div>
           </motion.div>
@@ -43,7 +45,7 @@ const Hero = () => {
           >
             <img 
               src="/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png"
-              alt="Featured Product"
+              alt="Kids Fashion Collection"
               className="w-full h-auto rounded-2xl shadow-xl"
             />
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg">
@@ -52,10 +54,21 @@ const Hero = () => {
                   <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                 ))}
               </div>
-              <p className="text-sm font-medium mt-1">Trusted by 10,000+ Parents</p>
+              <p className="text-sm font-medium mt-1">Loved by Parents & Kids</p>
             </div>
           </motion.div>
         </div>
+
+        {/* New Arrivals Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mb-16"
+        >
+          <h2 className="text-3xl font-bold mb-8">New Arrivals</h2>
+          <NewArrivals />
+        </motion.div>
 
         {/* Features Section */}
         <motion.div 
@@ -68,16 +81,16 @@ const Hero = () => {
             <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
               <Star className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Quality Assured</h3>
-            <p className="text-gray-600">Every toy is carefully selected to meet the highest safety and quality standards.</p>
+            <h3 className="text-xl font-semibold mb-2">Quality Materials</h3>
+            <p className="text-gray-600">Soft, durable fabrics that keep your children comfortable all day long.</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
               <Gift className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Educational Value</h3>
-            <p className="text-gray-600">Toys that combine fun with learning, supporting your child's development.</p>
+            <h3 className="text-xl font-semibold mb-2">Perfect Fit</h3>
+            <p className="text-gray-600">Carefully designed sizes to grow with your child, ensuring comfort and style.</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm">
