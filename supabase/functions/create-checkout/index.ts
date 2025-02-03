@@ -1,4 +1,4 @@
-// @deno-types="https://raw.githubusercontent.com/denoland/deno/v1.37.2/cli/dts/lib.deno.ns.d.ts"
+/// <reference lib="deno.ns" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import Stripe from 'https://esm.sh/stripe@14.21.0'
@@ -16,28 +16,8 @@ serve(async (req) => {
 
   try {
     const { cartItems, shippingAddress } = await req.json()
+    console.log('Received checkout request:', { cartItems, shippingAddress })
     
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    )
-
-    // Get the user from the auth header if available
-    const authHeader = req.headers.get('Authorization')
-    let userId = null
-    
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '')
-      const { data: { user } } = await supabaseClient.auth.getUser(token)
-      if (user) {
-        userId = user.id
-        console.log('Creating checkout for authenticated user:', userId)
-      }
-    } else {
-      console.log('Creating checkout for anonymous user')
-    }
-
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     })
@@ -55,36 +35,38 @@ serve(async (req) => {
       quantity: item.quantity,
     }))
 
+    console.log('Creating Stripe session with line items:', lineItems)
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
-      customer_email: shippingAddress.email, // Use shipping email for both anonymous and authenticated users
+      payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
       success_url: `${req.headers.get('origin')}/checkout/success`,
       cancel_url: `${req.headers.get('origin')}/cart`,
-      metadata: {
-        user_id: userId,
-        shipping_address: JSON.stringify(shippingAddress),
+      customer_email: shippingAddress.email,
+      shipping_address_collection: {
+        allowed_countries: ['US'],
       },
     })
 
-    console.log('Created checkout session:', session.id)
+    console.log('Created Stripe session:', session.id)
 
     return new Response(
       JSON.stringify({ url: session.url }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
-      }
+      },
     )
   } catch (error) {
     console.error('Error creating checkout session:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
-      }
+      },
     )
   }
 })
