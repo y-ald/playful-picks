@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter } from './ui/card';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useCartStorage } from '@/hooks/useCartStorage';
 
 type ProductCardProps = {
   product: {
@@ -21,6 +22,7 @@ type ProductCardProps = {
 const ProductCard = ({ product }: ProductCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const { toast } = useToast();
+  const { getOrCreateCartId } = useCartStorage();
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -75,11 +77,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const addToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const cartId = await getOrCreateCartId();
+      if (!cartId) {
         toast({
-          title: "Authentication required",
-          description: "Please login to add items to cart",
+          title: "Error",
+          description: "Failed to create cart",
           variant: "destructive"
         });
         return;
@@ -88,7 +90,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
       const { error } = await supabase
         .from('cart_items')
         .insert([
-          { user_id: user.id, product_id: product.id, quantity: 1 }
+          { product_id: product.id, quantity: 1 }
         ]);
 
       if (error) throw error;
