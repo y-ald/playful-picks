@@ -7,7 +7,9 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
-      <AgeCategories />
+      <div className="py-16 bg-white">
+        <AgeCategories />
+      </div>
     </div>
   );
 };
