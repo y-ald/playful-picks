@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
 interface CartItem {
@@ -13,7 +13,7 @@ interface CartItem {
     name: string
     price: number
     image_url: string | null
-  }
+  } | null
 }
 
 export default function Cart() {
@@ -40,10 +40,13 @@ export default function Cart() {
             image_url
           )
         `)
+        .order('created_at', { ascending: false })
 
       if (cartError) throw cartError
 
-      setCartItems(cartData as CartItem[])
+      // Filter out items with null products
+      const validCartItems = (cartData as CartItem[]).filter(item => item.product !== null)
+      setCartItems(validCartItems)
     } catch (error) {
       console.error('Error fetching cart items:', error)
       toast({
@@ -108,7 +111,7 @@ export default function Cart() {
 
   const calculateTotal = () => {
     return cartItems.reduce((total, item) => {
-      return total + (item.product.price * item.quantity)
+      return total + (item.product?.price || 0) * item.quantity
     }, 0)
   }
 
@@ -141,48 +144,50 @@ export default function Cart() {
       <div className="grid gap-4 md:grid-cols-[1fr,300px]">
         <div className="space-y-4">
           {cartItems.map((item) => (
-            <Card key={item.id} className="p-4">
-              <div className="flex gap-4">
-                {item.product.image_url && (
-                  <img
-                    src={item.product.image_url}
-                    alt={item.product.name}
-                    className="w-24 h-24 object-cover rounded"
-                  />
-                )}
-                <div className="flex-1">
-                  <h3 className="font-semibold">{item.product.name}</h3>
-                  <p className="text-muted-foreground">
-                    ${item.product.price.toFixed(2)}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    >
-                      -
-                    </Button>
-                    <span>{item.quantity}</span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      +
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeItem(item.id)}
-                      className="ml-auto"
-                    >
-                      Remove
-                    </Button>
+            item.product && (
+              <Card key={item.id} className="p-4">
+                <div className="flex gap-4">
+                  {item.product.image_url && (
+                    <img
+                      src={item.product.image_url}
+                      alt={item.product.name}
+                      className="w-24 h-24 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{item.product.name}</h3>
+                    <p className="text-muted-foreground">
+                      ${item.product.price.toFixed(2)}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      >
+                        -
+                      </Button>
+                      <span>{item.quantity}</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      >
+                        +
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeItem(item.id)}
+                        className="ml-auto"
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )
           ))}
         </div>
 
