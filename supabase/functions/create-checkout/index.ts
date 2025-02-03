@@ -18,7 +18,7 @@ serve(async (req) => {
     const { cartItems, shippingAddress } = await req.json()
     console.log('Received checkout request:', { cartItems, shippingAddress })
     
-    const stripe = new Stripe("sk_test_51Qo5AED5AuH6As8BXyi78HRoRs766g3mxTeBTIzKt4gVfaSPxrMMtzqPrWfTozlRIVgg2O26jFTaqjLp7NBJAHGq00JEZDUhcV" || '', {
+    const stripe = new Stripe('sk_test_51Qo5AED5AuH6As8BXyi78HRoRs766g3mxTeBTIzKt4gVfaSPxrMMtzqPrWfTozlRIVgg2O26jFTaqjLp7NBJAHGq00JEZDUhcV', {
       apiVersion: '2023-10-16',
     })
 
