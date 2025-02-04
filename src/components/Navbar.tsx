@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Menu, X, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const clientId = localStorage.getItem('anonymous_favorites_id');
 
   // Fetch cart items count
   const { data: cartCount = 0 } = useQuery({
@@ -22,15 +23,17 @@ const Navbar = () => {
 
   // Fetch favorites count
   const { data: favoritesCount = 0 } = useQuery({
-    queryKey: ['favoritesCount'],
+    queryKey: ['favoritesCount', clientId],
     queryFn: async () => {
       const { count, error } = await supabase
         .from('favorites')
-        .select('*', { count: 'exact' });
+        .select('*', { count: 'exact' })
+        .eq('client_id', clientId || '');
       
       if (error) throw error;
       return count || 0;
-    }
+    },
+    enabled: !!clientId
   });
 
   return (

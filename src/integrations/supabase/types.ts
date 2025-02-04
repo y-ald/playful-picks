@@ -67,18 +67,21 @@ export type Database = {
       }
       favorites: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           product_id: string | null
           user_id: string | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id?: string | null
           user_id?: string | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id?: string | null
