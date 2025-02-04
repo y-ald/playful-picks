@@ -1,9 +1,37 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingCart, Menu, X, Search } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Fetch cart items count
+  const { data: cartCount = 0 } = useQuery({
+    queryKey: ['cartCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('cart_items')
+        .select('*', { count: 'exact' });
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
+  // Fetch favorites count
+  const { data: favoritesCount = 0 } = useQuery({
+    queryKey: ['favoritesCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('favorites')
+        .select('*', { count: 'exact' });
+      
+      if (error) throw error;
+      return count || 0;
+    }
+  });
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
@@ -28,11 +56,21 @@ const Navbar = () => {
             <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <Search className="w-5 h-5 text-gray-600" />
             </button>
-            <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Link to="/favorites" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
               <Heart className="w-5 h-5 text-gray-600" />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-fade-in">
+                  {favoritesCount}
+                </span>
+              )}
             </Link>
-            <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Link to="/cart" className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
               <ShoppingCart className="w-5 h-5 text-gray-600" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-fade-in">
+                  {cartCount}
+                </span>
+              )}
             </Link>
             <button 
               className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
