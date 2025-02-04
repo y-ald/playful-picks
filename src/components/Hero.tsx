@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import NewArrivals from './NewArrivals';
 
 const Hero = () => {
   return (
@@ -58,17 +57,6 @@ const Hero = () => {
             </div>
           </motion.div>
         </div>
-
-        {/* New Arrivals Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="mb-16"
-        >
-          <h2 className="text-3xl font-bold mb-8">New Arrivals</h2>
-          <NewArrivals />
-        </motion.div>
 
         {/* Features Section */}
         <motion.div 
