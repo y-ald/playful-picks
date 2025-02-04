@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,6 +10,7 @@ import Navbar from '@/components/Navbar';
 const ProductDetails = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -23,6 +25,20 @@ const ProductDetails = () => {
       return data;
     },
   });
+
+  // Mock multiple images (in production, this would come from the product data)
+  const images = product ? [
+    product.image_url,
+    '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png',
+  ].filter(Boolean) as string[] : [];
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const addToCart = async () => {
     try {
@@ -105,12 +121,47 @@ const ProductDetails = () => {
       <Navbar />
       <div className="container mx-auto px-4 pt-24">
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="relative">
-            <img
-              src={product.image_url || '/placeholder.svg'}
-              alt={product.name}
-              className="w-full h-auto rounded-lg"
-            />
+          <div className="space-y-4">
+            <div className="relative aspect-square">
+              <img
+                src={images[currentImageIndex]}
+                alt={product.name}
+                className="w-full h-full object-cover rounded-lg"
+              />
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentImageIndex(index)}
+                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
+                    currentImageIndex === index ? 'border-primary' : 'border-transparent'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
           <div className="space-y-6">
             <h1 className="text-4xl font-bold">{product.name}</h1>

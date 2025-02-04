@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +21,25 @@ type ProductCardProps = {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { toast } = useToast();
   const { getOrCreateCartId } = useCartStorage();
+
+  // Mock multiple images (in production, this would come from the product data)
+  const images = [
+    product.image_url,
+    '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png',
+  ].filter(Boolean) as string[];
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -114,10 +131,26 @@ const ProductCard = ({ product }: ProductCardProps) => {
       <Link to={`/product/${product.id}`}>
         <div className="aspect-square relative overflow-hidden">
           <img
-            src={product.image_url || '/placeholder.svg'}
+            src={images[currentImageIndex]}
             alt={product.name}
             className="object-cover w-full h-full transition-transform group-hover:scale-105"
           />
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/80 hover:bg-white transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full bg-white/80 hover:bg-white transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </>
+          )}
           <button
             className={`absolute top-2 right-2 p-2 rounded-full ${
               isFavorite ? 'bg-primary text-white' : 'bg-white/80 hover:bg-white'
