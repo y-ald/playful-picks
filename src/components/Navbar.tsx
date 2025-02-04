@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ShoppingCart, Menu, X, Search } from 'lucide-react';
+import { Heart, ShoppingCart, Menu, X, Search, LogIn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -8,16 +8,20 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const clientId = localStorage.getItem('anonymous_favorites_id');
 
-  // Fetch cart items count
+  // Fetch cart items count with proper error handling
   const { data: cartCount = 0 } = useQuery({
     queryKey: ['cartCount'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('cart_items')
         .select('*', { count: 'exact' });
       
-      if (error) throw error;
-      return count || 0;
+      if (error) {
+        console.error('Error fetching cart count:', error);
+        return 0;
+      }
+      
+      return data?.length || 0;
     }
   });
 
@@ -74,6 +78,13 @@ const Navbar = () => {
                   {cartCount}
                 </span>
               )}
+            </Link>
+            <Link 
+              to="/auth" 
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              title="Login/Signup"
+            >
+              <LogIn className="w-5 h-5 text-gray-600" />
             </Link>
             <button 
               className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
