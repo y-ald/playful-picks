@@ -24,7 +24,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const isProductFavorite = isFavorite(product.id);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent navigation when clicking the heart
+    e.preventDefault();
     try {
       if (isProductFavorite) {
         await removeFromFavorites(product.id);
@@ -87,7 +87,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
             />
           </button>
         </div>
-        <h3 className="text-lg font-semibold text-gray-800 mb-2">{product.name}</h3>
+        <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2 h-14">
+          {product.name}
+        </h3>
         <p className="text-primary font-bold mb-4">${product.price.toFixed(2)}</p>
       </Link>
       <Button 
