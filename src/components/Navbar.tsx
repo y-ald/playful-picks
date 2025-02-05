@@ -8,7 +8,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const clientId = localStorage.getItem('anonymous_favorites_id');
 
-  // Fetch cart items count with proper error handling
+  // Fetch cart items count with proper error handling and refetch interval
   const { data: cartCount = 0 } = useQuery({
     queryKey: ['cartCount'],
     queryFn: async () => {
@@ -22,10 +22,10 @@ const Navbar = () => {
       }
       
       return data?.length || 0;
-    }
+    },
+    refetchInterval: 1000 // Refetch every second to keep cart count updated
   });
 
-  // Fetch favorites count
   const { data: favoritesCount = 0 } = useQuery({
     queryKey: ['favoritesCount', clientId],
     queryFn: async () => {
