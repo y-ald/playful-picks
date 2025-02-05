@@ -29,18 +29,18 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#33C3F0",
-          hover: "#1EAEDB",
-          light: "#E1F6FF",
+          DEFAULT: "#FF69B4",
+          hover: "#FF4BA3",
+          light: "#FFE8F4",
         },
         secondary: {
           DEFAULT: "#4A4A4A",
           light: "#F7F7F7",
         },
         accent: {
-          DEFAULT: "#FF69B4",
-          light: "#FFE8F4",
-          hover: "#FF4BA3",
+          DEFAULT: "#33C3F0",
+          hover: "#1EAEDB",
+          light: "#E1F6FF",
         },
       },
       borderRadius: {
