@@ -43,8 +43,8 @@ const Hero = () => {
             className="relative"
           >
             <img 
-              src="/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png"
-              alt="Kids Fashion Collection"
+              src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
+              alt="Kaïa Kids Collection"
               className="w-full h-auto rounded-2xl shadow-xl"
             />
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg">
