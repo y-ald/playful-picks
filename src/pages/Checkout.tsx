@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,18 +17,29 @@ import {
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   address: z.string().min(5, "Address must be at least 5 characters"),
   city: z.string().min(2, "City must be at least 2 characters"),
-  state: z.string().min(2, "State must be at least 2 characters"),
-  zipCode: z.string().min(5, "ZIP code must be at least 5 characters"),
+  state: z.string().min(2, "State/Province must be at least 2 characters"),
+  zipCode: z.string().min(5, "Postal code must be at least 5 characters"),
+  country: z.string().min(2, "Country must be at least 2 characters"),
+  shipping_rate: z.string().optional(),
 })
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false)
+  const [shippingRates, setShippingRates] = useState([])
+  const [selectedRate, setSelectedRate] = useState(null)
   const location = useLocation()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -42,8 +54,97 @@ export default function Checkout() {
       city: "",
       state: "",
       zipCode: "",
+      country: "CA", // Default to Canada
+      shipping_rate: "",
     },
   })
+
+  const validateAddress = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('shipping', {
+        body: {
+          action: 'validateAddress',
+          payload: {
+            name: values.name,
+            street1: values.address,
+            city: values.city,
+            state: values.state,
+            zip: values.zipCode,
+            country: values.country,
+            validate: true,
+          },
+        },
+      })
+
+      if (error) throw error
+
+      if (!data.validation_results.is_valid) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Address",
+          description: "Please check your shipping address and try again.",
+        })
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Address validation error:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to validate address",
+      })
+      return false
+    }
+  }
+
+  const fetchShippingRates = async (values: z.infer<typeof formSchema>) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('shipping', {
+        body: {
+          action: 'getRates',
+          payload: {
+            fromAddress: {
+              name: "Kaia Kids Store",
+              street1: "123 Warehouse St",
+              city: "Montreal",
+              state: "QC",
+              zip: "H2X 1Y6",
+              country: "CA",
+            },
+            toAddress: {
+              name: values.name,
+              street1: values.address,
+              city: values.city,
+              state: values.state,
+              zip: values.zipCode,
+              country: values.country,
+            },
+            parcel: {
+              length: "20",
+              width: "15",
+              height: "10",
+              distance_unit: "cm",
+              weight: "1",
+              mass_unit: "kg",
+            },
+          },
+        },
+      })
+
+      if (error) throw error
+
+      setShippingRates(data)
+    } catch (error) {
+      console.error('Error fetching shipping rates:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch shipping rates",
+      })
+    }
+  }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (cartItems.length === 0) {
@@ -55,12 +156,28 @@ export default function Checkout() {
       return
     }
 
+    if (!selectedRate) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please select a shipping method",
+      })
+      return
+    }
+
     setLoading(true)
     try {
+      const isValidAddress = await validateAddress(values)
+      if (!isValidAddress) {
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           cartItems,
           shippingAddress: values,
+          shippingRate: selectedRate,
         },
       })
 
@@ -80,6 +197,13 @@ export default function Checkout() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAddressSubmit = async (values: z.infer<typeof formSchema>) => {
+    const isValidAddress = await validateAddress(values)
+    if (isValidAddress) {
+      await fetchShippingRates(values)
     }
   }
 
@@ -103,7 +227,7 @@ export default function Checkout() {
           <Card className="p-8">
             <h2 className="text-2xl font-semibold mb-6">Shipping Information</h2>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(handleAddressSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
                   name="name"
@@ -146,7 +270,7 @@ export default function Checkout() {
                   )}
                 />
 
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="grid gap-6 md:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="city"
@@ -166,7 +290,23 @@ export default function Checkout() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>State</FormLabel>
+                        <FormLabel>Province/State</FormLabel>
+                        <FormControl>
+                          <Input {...field} className="text-lg" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Postal Code</FormLabel>
                         <FormControl>
                           <Input {...field} className="text-lg" />
                         </FormControl>
@@ -177,13 +317,24 @@ export default function Checkout() {
 
                   <FormField
                     control={form.control}
-                    name="zipCode"
+                    name="country"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ZIP Code</FormLabel>
-                        <FormControl>
-                          <Input {...field} className="text-lg" />
-                        </FormControl>
+                        <FormLabel>Country</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a country" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="CA">Canada</SelectItem>
+                            <SelectItem value="US">United States</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -195,10 +346,44 @@ export default function Checkout() {
                   className="w-full text-lg py-6" 
                   disabled={loading}
                 >
-                  {loading ? "Processing..." : "Proceed to Payment"}
+                  Calculate Shipping
                 </Button>
               </form>
             </Form>
+
+            {shippingRates.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-xl font-semibold mb-4">Shipping Options</h3>
+                <div className="space-y-4">
+                  {shippingRates.map((rate: any) => (
+                    <div
+                      key={rate.object_id}
+                      className="flex items-center justify-between p-4 border rounded cursor-pointer hover:bg-gray-50"
+                      onClick={() => setSelectedRate(rate)}
+                    >
+                      <div>
+                        <p className="font-medium">{rate.provider}</p>
+                        <p className="text-sm text-gray-600">{rate.servicelevel.name}</p>
+                        <p className="text-sm text-gray-600">
+                          Estimated delivery: {rate.estimated_days} days
+                        </p>
+                      </div>
+                      <div className="text-lg font-semibold">
+                        ${parseFloat(rate.amount).toFixed(2)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <Button 
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="w-full text-lg py-6 mt-6" 
+                  disabled={loading || !selectedRate}
+                >
+                  {loading ? "Processing..." : "Proceed to Payment"}
+                </Button>
+              </div>
+            )}
           </Card>
 
           <div className="space-y-6">
@@ -228,8 +413,20 @@ export default function Checkout() {
               </div>
               <div className="border-t mt-6 pt-4">
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>Total</span>
+                  <span>Subtotal</span>
                   <span>${total.toFixed(2)}</span>
+                </div>
+                {selectedRate && (
+                  <div className="flex justify-between items-center mt-2">
+                    <span>Shipping</span>
+                    <span>${parseFloat(selectedRate.amount).toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center mt-4 text-xl font-bold">
+                  <span>Total</span>
+                  <span>
+                    ${(total + (selectedRate ? parseFloat(selectedRate.amount) : 0)).toFixed(2)}
+                  </span>
                 </div>
               </div>
             </Card>

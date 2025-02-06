@@ -205,6 +205,54 @@ export type Database = {
         }
         Relationships: []
       }
+      shipments: {
+        Row: {
+          address_from: Json | null
+          address_to: Json | null
+          carrier: string | null
+          created_at: string
+          id: string
+          label_url: string | null
+          metadata: Json | null
+          order_id: string
+          parcel: Json | null
+          rate_id: string | null
+          status: string | null
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_from?: Json | null
+          address_to?: Json | null
+          carrier?: string | null
+          created_at?: string
+          id?: string
+          label_url?: string | null
+          metadata?: Json | null
+          order_id: string
+          parcel?: Json | null
+          rate_id?: string | null
+          status?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_from?: Json | null
+          address_to?: Json | null
+          carrier?: string | null
+          created_at?: string
+          id?: string
+          label_url?: string | null
+          metadata?: Json | null
+          order_id?: string
+          parcel?: Json | null
+          rate_id?: string | null
+          status?: string | null
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -16,6 +16,7 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
+import TrackingPage from "./pages/TrackingPage";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
               <Route path="checkout" element={<Checkout />} />
               <Route path="checkoutsuccess" element={<CheckoutSuccess />} />
               <Route path="auth" element={<Auth />} />
+              <Route path="tracking/:trackingNumber" element={<TrackingPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
