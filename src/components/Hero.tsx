@@ -1,10 +1,11 @@
+
 import { motion } from 'framer-motion';
 import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <div className="relative min-h-screen bg-secondary-light overflow-hidden">
+    <div className="relative min-h-screen bg-white overflow-hidden">
       <div className="container mx-auto px-4 pt-24 pb-16">
         {/* Main Hero Section */}
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
@@ -30,9 +31,6 @@ const Hero = () => {
                 Shop Collection
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-              <Link to="/about" className="inline-flex items-center px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors">
-                Size Guide
-              </Link>
             </div>
           </motion.div>
           
@@ -43,9 +41,9 @@ const Hero = () => {
             className="relative"
           >
             <img 
-              src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
+              src="/lovable-uploads/f90e85a7-0633-42ef-90c8-083081a2251d.png"
               alt="Kaïa Kids Collection"
-              className="w-full h-auto rounded-2xl shadow-xl"
+              className="w-full h-auto rounded-2xl shadow-xl object-cover"
             />
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg">
               <div className="flex items-center space-x-1">
