@@ -29,6 +29,18 @@
         "title": "Livraison rapide",
         "description": "Livraison gratuite pour les commandes de plus de 50$ avec notre service de livraison express."
       }
+    },
+    "ageCategories": {
+      "title": "Acheter par âge",
+      "subtitle": "Trouvez les jouets parfaits pour l'âge de votre enfant",
+      "infant": "Bébés",
+      "toddler": "Tout-petits",
+      "kids": "Enfants",
+      "preteen": "Pré-adolescents"
+    },
+    "newArrivals": {
+      "title": "Nouveautés",
+      "viewAll": "Voir tout"
     }
   },
   "shop": {
@@ -38,6 +50,19 @@
       "allCategories": "Toutes les catégories",
       "allAges": "Tous les âges",
       "years": "ans"
+    }
+  },
+  "about": {
+    "title": "À propos de Kaia Kids",
+    "description": "Notre vision est de fournir des vêtements de haute qualité qui sont élégants et beaux pour toutes les occasions.",
+    "vision": "Nous nous engageons à contribuer à l'écologie de la planète en proposant des vêtements durables et de haute qualité.",
+    "quality": {
+      "title": "La qualité avant tout",
+      "description": "Nous sélectionnons soigneusement les matériaux et les processus de fabrication pour garantir que nos vêtements répondent aux plus hauts standards de qualité et de durabilité."
+    },
+    "sustainability": {
+      "title": "Durabilité",
+      "description": "Notre engagement envers l'environnement nous pousse à utiliser des matériaux écologiques et des méthodes de production durables."
     }
   },
   "contact": {
@@ -55,6 +80,37 @@
       "email": "Email",
       "message": "Message",
       "send": "Envoyer le message"
+    },
+    "social": {
+      "title": "Suivez-nous",
+      "facebook": "Suivez-nous sur Facebook",
+      "instagram": "Suivez-nous sur Instagram",
+      "twitter": "Suivez-nous sur Twitter",
+      "linkedin": "Suivez-nous sur LinkedIn"
     }
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "signUp": "S'inscrire",
+    "email": "Email",
+    "password": "Mot de passe",
+    "name": "Nom complet",
+    "createAccount": "Créer un compte",
+    "alreadyHaveAccount": "Vous avez déjà un compte ? Connectez-vous",
+    "dontHaveAccount": "Vous n'avez pas de compte ? Inscrivez-vous"
+  },
+  "cart": {
+    "title": "Panier",
+    "empty": "Votre panier est vide",
+    "continueShopping": "Continuer les achats",
+    "summary": "Résumé de la commande",
+    "total": "Total",
+    "checkout": "Procéder au paiement",
+    "remove": "Supprimer"
+  },
+  "favorites": {
+    "title": "Mes favoris",
+    "empty": "Pas encore de favoris",
+    "addToCart": "Ajouter au panier"
   }
 }

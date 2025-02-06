@@ -29,6 +29,18 @@
         "title": "Fast Delivery",
         "description": "Free shipping on orders over $50 with our express delivery service."
       }
+    },
+    "ageCategories": {
+      "title": "Shop by Age",
+      "subtitle": "Find the perfect toys for your child's age group",
+      "infant": "Infants",
+      "toddler": "Toddlers",
+      "kids": "Kids",
+      "preteen": "Pre-teens"
+    },
+    "newArrivals": {
+      "title": "New Arrivals",
+      "viewAll": "View All"
     }
   },
   "shop": {
@@ -38,6 +50,19 @@
       "allCategories": "All Categories",
       "allAges": "All Ages",
       "years": "years"
+    }
+  },
+  "about": {
+    "title": "About Kaia Kids",
+    "description": "Our vision is to provide high-quality clothes that are elegant and beautiful for all occasions.",
+    "vision": "We are committed to contributing to the ecology of the planet by offering sustainable and high-quality clothing.",
+    "quality": {
+      "title": "Quality First",
+      "description": "We carefully select materials and manufacturing processes to ensure our clothes meet the highest standards of quality and durability."
+    },
+    "sustainability": {
+      "title": "Sustainability",
+      "description": "Our commitment to the environment drives us to use eco-friendly materials and sustainable production methods."
     }
   },
   "contact": {
@@ -55,6 +80,37 @@
       "email": "Email",
       "message": "Message",
       "send": "Send Message"
+    },
+    "social": {
+      "title": "Follow Us",
+      "facebook": "Follow us on Facebook",
+      "instagram": "Follow us on Instagram",
+      "twitter": "Follow us on Twitter",
+      "linkedin": "Follow us on LinkedIn"
     }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full Name",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account? Sign in",
+    "dontHaveAccount": "Don't have an account? Sign up"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "summary": "Order Summary",
+    "total": "Total",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove"
+  },
+  "favorites": {
+    "title": "My Favorites",
+    "empty": "No favorites yet",
+    "addToCart": "Add to Cart"
   }
 }
