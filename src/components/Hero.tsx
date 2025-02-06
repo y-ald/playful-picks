@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 
 const Hero = () => {
   return (
-    <div className="relative min-h-screen bg-white overflow-hidden">
+    <div className="relative min-h-screen bg-secondary-light overflow-hidden">
       <div className="container mx-auto px-4 pt-24 pb-16">
         {/* Main Hero Section */}
         <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
@@ -41,9 +41,9 @@ const Hero = () => {
             className="relative"
           >
             <img 
-              src="/lovable-uploads/f90e85a7-0633-42ef-90c8-083081a2251d.png"
+              src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
               alt="Kaïa Kids Collection"
-              className="w-full h-auto rounded-2xl shadow-xl object-cover"
+              className="w-full h-auto rounded-2xl shadow-xl"
             />
             <div className="absolute -bottom-4 -right-4 bg-white p-4 rounded-lg shadow-lg">
               <div className="flex items-center space-x-1">

@@ -1,5 +1,6 @@
+
 import { useState } from 'react';
-import { Mail, MessageSquare, Send } from 'lucide-react';
+import { Mail, MessageSquare, Send, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -63,10 +64,54 @@ const Contact = () => {
               <MessageSquare className="h-6 w-6 text-primary" />
               <div>
                 <h3 className="font-semibold">Live Chat</h3>
-                <p className="text-gray-600">Mon-Fri, 9am-5pm EST</p>
+                <a 
+                  href="https://wa.me/15814433870"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  Chat on WhatsApp
+                </a>
               </div>
             </div>
           </div>
+
+          {/* Social Media Links */}
+          <div className="flex justify-center gap-6 mb-12">
+            <a 
+              href="https://facebook.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Facebook className="h-6 w-6 text-blue-600" />
+            </a>
+            <a 
+              href="https://instagram.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Instagram className="h-6 w-6 text-pink-600" />
+            </a>
+            <a 
+              href="https://twitter.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Twitter className="h-6 w-6 text-blue-400" />
+            </a>
+            <a 
+              href="https://linkedin.com" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Linkedin className="h-6 w-6 text-blue-700" />
+            </a>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium mb-2">
