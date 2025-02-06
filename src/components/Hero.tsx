@@ -2,8 +2,13 @@
 import { motion } from 'framer-motion';
 import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Hero = () => {
+  const { language, translations } = useLanguage();
+  const t = translations.home?.hero || {};
+  const features = translations.home?.features || {};
+
   return (
     <div className="relative min-h-screen bg-secondary-light overflow-hidden">
       <div className="container mx-auto px-4 pt-24 pb-16">
@@ -16,19 +21,20 @@ const Hero = () => {
             className="space-y-6"
           >
             <span className="inline-block px-4 py-2 bg-primary-light text-primary rounded-full text-sm font-medium">
-              Spring Collection - 20% Off Kids Fashion
+              {t.badge}
             </span>
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
-              Dress Your Little Ones in Style
+              {t.title}
             </h1>
             <p className="text-lg text-gray-600 max-w-md">
-              Discover our delightful collection of children's clothing that combines 
-              comfort, style, and durability. From playful patterns to practical designs, 
-              we've got everything your kids need.
+              {t.description}
             </p>
             <div className="flex gap-4">
-              <Link to="/shop" className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors">
-                Shop Collection
+              <Link 
+                to={`/${language}/shop`} 
+                className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors"
+              >
+                {t.shopButton}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </div>
@@ -51,7 +57,7 @@ const Hero = () => {
                   <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                 ))}
               </div>
-              <p className="text-sm font-medium mt-1">Loved by Parents & Kids</p>
+              <p className="text-sm font-medium mt-1">{t.reviewsTitle}</p>
             </div>
           </motion.div>
         </div>
@@ -67,24 +73,24 @@ const Hero = () => {
             <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
               <Star className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Quality Materials</h3>
-            <p className="text-gray-600">Soft, durable fabrics that keep your children comfortable all day long.</p>
+            <h3 className="text-xl font-semibold mb-2">{features.quality?.title}</h3>
+            <p className="text-gray-600">{features.quality?.description}</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
               <Gift className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Perfect Fit</h3>
-            <p className="text-gray-600">Carefully designed sizes to grow with your child, ensuring comfort and style.</p>
+            <h3 className="text-xl font-semibold mb-2">{features.fit?.title}</h3>
+            <p className="text-gray-600">{features.fit?.description}</p>
           </div>
 
           <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
               <Truck className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Fast Delivery</h3>
-            <p className="text-gray-600">Free shipping on orders over $50 with our express delivery service.</p>
+            <h3 className="text-xl font-semibold mb-2">{features.delivery?.title}</h3>
+            <p className="text-gray-600">{features.delivery?.description}</p>
           </div>
         </motion.div>
       </div>

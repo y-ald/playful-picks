@@ -1,0 +1,60 @@
+
+{
+  "navigation": {
+    "home": "Accueil",
+    "shop": "Boutique",
+    "about": "À propos",
+    "contact": "Contact",
+    "favorites": "Favoris",
+    "cart": "Panier"
+  },
+  "home": {
+    "hero": {
+      "badge": "Collection Printemps - 20% de réduction sur la mode enfant",
+      "title": "Habillez vos petits avec style",
+      "description": "Découvrez notre délicieuse collection de vêtements pour enfants qui allie confort, style et durabilité. Des motifs ludiques aux designs pratiques, nous avons tout ce dont vos enfants ont besoin.",
+      "shopButton": "Voir la collection",
+      "reviewsTitle": "Adoré par les parents et les enfants"
+    },
+    "features": {
+      "quality": {
+        "title": "Matériaux de qualité",
+        "description": "Des tissus doux et durables qui gardent vos enfants confortables toute la journée."
+      },
+      "fit": {
+        "title": "Ajustement parfait",
+        "description": "Tailles soigneusement conçues pour grandir avec votre enfant, assurant confort et style."
+      },
+      "delivery": {
+        "title": "Livraison rapide",
+        "description": "Livraison gratuite pour les commandes de plus de 50$ avec notre service de livraison express."
+      }
+    }
+  },
+  "shop": {
+    "title": "Boutique",
+    "searchPlaceholder": "Rechercher des produits...",
+    "filters": {
+      "allCategories": "Toutes les catégories",
+      "allAges": "Tous les âges",
+      "years": "ans"
+    }
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "email": {
+      "title": "Email",
+      "value": "support@example.com"
+    },
+    "chat": {
+      "title": "Chat en direct",
+      "whatsapp": "Discuter sur WhatsApp"
+    },
+    "form": {
+      "name": "Nom",
+      "email": "Email",
+      "message": "Message",
+      "send": "Envoyer le message"
+    }
+  }
+}

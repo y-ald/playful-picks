@@ -1,0 +1,60 @@
+
+{
+  "navigation": {
+    "home": "Home",
+    "shop": "Shop",
+    "about": "About",
+    "contact": "Contact",
+    "favorites": "Favorites",
+    "cart": "Cart"
+  },
+  "home": {
+    "hero": {
+      "badge": "Spring Collection - 20% Off Kids Fashion",
+      "title": "Dress Your Little Ones in Style",
+      "description": "Discover our delightful collection of children's clothing that combines comfort, style, and durability. From playful patterns to practical designs, we've got everything your kids need.",
+      "shopButton": "Shop Collection",
+      "reviewsTitle": "Loved by Parents & Kids"
+    },
+    "features": {
+      "quality": {
+        "title": "Quality Materials",
+        "description": "Soft, durable fabrics that keep your children comfortable all day long."
+      },
+      "fit": {
+        "title": "Perfect Fit",
+        "description": "Carefully designed sizes to grow with your child, ensuring comfort and style."
+      },
+      "delivery": {
+        "title": "Fast Delivery",
+        "description": "Free shipping on orders over $50 with our express delivery service."
+      }
+    }
+  },
+  "shop": {
+    "title": "Shop",
+    "searchPlaceholder": "Search products...",
+    "filters": {
+      "allCategories": "All Categories",
+      "allAges": "All Ages",
+      "years": "years"
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "email": {
+      "title": "Email",
+      "value": "support@example.com"
+    },
+    "chat": {
+      "title": "Live Chat",
+      "whatsapp": "Chat on WhatsApp"
+    },
+    "form": {
+      "name": "Name",
+      "email": "Email",
+      "message": "Message",
+      "send": "Send Message"
+    }
+  }
+}
