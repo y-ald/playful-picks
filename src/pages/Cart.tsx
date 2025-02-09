@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 interface CartItem {
   id: string
@@ -21,6 +22,13 @@ export default function Cart() {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const navigate = useNavigate()
+  const { language, translations, setLanguage } = useLanguage();
+  const location = useLocation();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'fr' : 'en');
+  };
+
 
   useEffect(() => {
     fetchCartItems()
@@ -116,7 +124,7 @@ export default function Cart() {
   }
 
   const handleCheckout = () => {
-    navigate('/checkout', { 
+    navigate({`/${language}/checkout`}, { 
       state: { 
         cartItems,
         total: calculateTotal()
@@ -132,7 +140,7 @@ export default function Cart() {
     return (
       <div className="container mx-auto p-4 text-center">
         <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-        <Button onClick={() => navigate('/shop')}>Continue Shopping</Button>
+        <Button onClick={() => navigate({`/${language}/shop`})}>Continue Shopping</Button>
       </div>
     )
   }
