@@ -1,3 +1,4 @@
+
 /// <reference lib="deno.ns" />
 /// <reference lib="deno.unstable" />
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
@@ -16,8 +17,8 @@ serve(async (req) => {
   }
 
   try {
-    const { cartItems, shippingAddress } = await req.json()
-    console.log('Received checkout request:', { cartItems, shippingAddress })
+    const { cartItems, shippingAddress, shippingRate } = await req.json()
+    console.log('Received checkout request:', { cartItems, shippingAddress, shippingRate })
     
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
@@ -46,9 +47,26 @@ serve(async (req) => {
       success_url: `${req.headers.get('origin')}/en/checkoutsuccess`,
       cancel_url: `${req.headers.get('origin')}/en/cart`,
       customer_email: shippingAddress.email,
-      shipping_address_collection: {
-        allowed_countries: ['US'],
-      },
+      shipping_options: [{
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: {
+            amount: Math.round(parseFloat(shippingRate.amount) * 100), // Convert to cents
+            currency: 'usd',
+          },
+          display_name: `${shippingRate.provider} - ${shippingRate.servicelevel.name}`,
+          delivery_estimate: {
+            minimum: {
+              unit: 'business_day',
+              value: parseInt(shippingRate.estimated_days),
+            },
+            maximum: {
+              unit: 'business_day',
+              value: parseInt(shippingRate.estimated_days) + 2,
+            },
+          },
+        },
+      }],
     })
 
     console.log('Created Stripe session:', session.id)
