@@ -1,4 +1,3 @@
-
 {
   "navigation": {
     "home": "Home",
@@ -50,7 +49,12 @@
       "allCategories": "All Categories",
       "allAges": "All Ages",
       "years": "years"
-    }
+    },
+    "addToCart": "Add to Cart",
+    "addToFavorites": "Add to Favorites",
+    "removeFavorite": "Remove from Favorites",
+    "outOfStock": "Out of Stock",
+    "price": "Price"
   },
   "about": {
     "title": "About Kaia Kids",
@@ -106,11 +110,38 @@
     "summary": "Order Summary",
     "total": "Total",
     "checkout": "Proceed to Checkout",
-    "remove": "Remove"
+    "remove": "Remove",
+    "quantity": "Quantity",
+    "subtotal": "Subtotal",
+    "shippingCalculation": "Shipping will be calculated at checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shippingInformation": "Shipping Information",
+    "shippingAddress": "Shipping Address",
+    "fullName": "Full Name",
+    "email": "Email",
+    "address": "Street Address",
+    "city": "City",
+    "state": "State/Province",
+    "zipCode": "Postal Code",
+    "country": "Country",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "total": "Total",
+    "proceedToPayment": "Proceed to Payment",
+    "calculateShipping": "Calculate Shipping",
+    "shippingOptions": "Shipping Options",
+    "selectShipping": "Select a shipping method",
+    "estimatedDays": "Estimated delivery: {days} days"
   },
   "favorites": {
     "title": "My Favorites",
     "empty": "No favorites yet",
-    "addToCart": "Add to Cart"
+    "addToCart": "Add to Cart",
+    "remove": "Remove",
+    "continueShopping": "Continue Shopping",
+    "price": "Price"
   }
 }

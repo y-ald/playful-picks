@@ -1,4 +1,3 @@
-
 {
   "navigation": {
     "home": "Accueil",
@@ -50,7 +49,12 @@
       "allCategories": "Toutes les catégories",
       "allAges": "Tous les âges",
       "years": "ans"
-    }
+    },
+    "addToCart": "Ajouter au panier",
+    "addToFavorites": "Ajouter aux favoris",
+    "removeFavorite": "Retirer des favoris",
+    "outOfStock": "Rupture de stock",
+    "price": "Prix"
   },
   "about": {
     "title": "À propos de Kaia Kids",
@@ -106,11 +110,38 @@
     "summary": "Résumé de la commande",
     "total": "Total",
     "checkout": "Procéder au paiement",
-    "remove": "Supprimer"
+    "remove": "Supprimer",
+    "quantity": "Quantité",
+    "subtotal": "Sous-total",
+    "shippingCalculation": "Les frais de livraison seront calculés lors du paiement"
+  },
+  "checkout": {
+    "title": "Paiement",
+    "shippingInformation": "Informations de livraison",
+    "shippingAddress": "Adresse de livraison",
+    "fullName": "Nom complet",
+    "email": "Email",
+    "address": "Adresse",
+    "city": "Ville",
+    "state": "État/Province",
+    "zipCode": "Code postal",
+    "country": "Pays",
+    "orderSummary": "Résumé de la commande",
+    "subtotal": "Sous-total",
+    "shipping": "Livraison",
+    "total": "Total",
+    "proceedToPayment": "Procéder au paiement",
+    "calculateShipping": "Calculer les frais de livraison",
+    "shippingOptions": "Options de livraison",
+    "selectShipping": "Sélectionnez une méthode de livraison",
+    "estimatedDays": "Livraison estimée : {days} jours"
   },
   "favorites": {
     "title": "Mes favoris",
     "empty": "Pas encore de favoris",
-    "addToCart": "Ajouter au panier"
+    "addToCart": "Ajouter au panier",
+    "remove": "Supprimer",
+    "continueShopping": "Continuer les achats",
+    "price": "Prix"
   }
 }
