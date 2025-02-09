@@ -1,8 +1,7 @@
 
-// @deno-types="https://deno.land/x/types/stripe/v11.ts"
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import Stripe from 'https://esm.sh/stripe@14.21.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import Stripe from 'stripe'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,8 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const { cartItems, shippingAddress } = await req.json()
-    console.log('Received checkout request:', { cartItems, shippingAddress })
+    const { cartItems, shippingAddress, shippingRate } = await req.json()
+    console.log('Received checkout request:', { cartItems, shippingAddress, shippingRate })
     
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
@@ -46,9 +45,26 @@ serve(async (req) => {
       success_url: `${req.headers.get('origin')}/checkout/success`,
       cancel_url: `${req.headers.get('origin')}/cart`,
       customer_email: shippingAddress.email,
-      shipping_address_collection: {
-        allowed_countries: ['US'],
-      },
+      shipping_options: [{
+        shipping_rate_data: {
+          type: 'fixed_amount',
+          fixed_amount: {
+            amount: Math.round(shippingRate.amount * 100), // Convert to cents
+            currency: 'usd',
+          },
+          display_name: shippingRate.provider,
+          delivery_estimate: {
+            minimum: {
+              unit: 'business_day',
+              value: shippingRate.estimated_days,
+            },
+            maximum: {
+              unit: 'business_day',
+              value: shippingRate.estimated_days + 2,
+            },
+          },
+        },
+      }],
     })
 
     console.log('Created Stripe session:', session.id)
