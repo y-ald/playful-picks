@@ -1,13 +1,21 @@
 import { useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useLanguage } from "@/contexts/LanguageContext"
 
 export default function CheckoutSuccess() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { language, translations, setLanguage } = useLanguage();
+  const location = useLocation();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'fr' : 'en');
+  };
+
 
   useEffect(() => {
     const clearCart = async () => {
@@ -38,7 +46,7 @@ export default function CheckoutSuccess() {
         <p className="text-muted-foreground mb-6">
           Thank you for your purchase. We'll send you an email with your order details shortly.
         </p>
-        <Button onClick={() => navigate('/shop')}>
+        <Button onClick={() => navigate(`/${language}/shop`)}>
           Continue Shopping
         </Button>
       </Card>

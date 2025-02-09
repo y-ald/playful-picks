@@ -43,8 +43,8 @@ serve(async (req) => {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      success_url: `${req.headers.get('origin')}/checkout/success`,
-      cancel_url: `${req.headers.get('origin')}/cart`,
+      success_url: `${req.headers.get('origin')}/en/checkoutsuccess`,
+      cancel_url: `${req.headers.get('origin')}/en/cart`,
       customer_email: shippingAddress.email,
       shipping_address_collection: {
         allowed_countries: ['US'],
