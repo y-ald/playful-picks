@@ -124,7 +124,7 @@ export default function Cart() {
   }
 
   const handleCheckout = () => {
-    navigate({`/${language}/checkout`}, { 
+    navigate(`/${language}/checkout`, { 
       state: { 
         cartItems,
         total: calculateTotal()
@@ -140,7 +140,7 @@ export default function Cart() {
     return (
       <div className="container mx-auto p-4 text-center">
         <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
-        <Button onClick={() => navigate({`/${language}/shop`})}>Continue Shopping</Button>
+        <Button onClick={() => navigate(`/${language}/shop`)}>Continue Shopping</Button>
       </div>
     )
   }
