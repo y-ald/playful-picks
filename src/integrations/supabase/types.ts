@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       cart_items: {
         Row: {
+          client_id: string | null
           created_at: string
           id: string
           product_id: string | null
@@ -18,6 +19,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id?: string | null
@@ -25,6 +27,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          client_id?: string | null
           created_at?: string
           id?: string
           product_id?: string | null
