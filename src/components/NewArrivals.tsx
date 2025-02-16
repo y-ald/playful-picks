@@ -4,11 +4,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useRef } from 'react';
 import ProductCard from './ProductCard';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const NewArrivals = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const { translations } = useLanguage();
+  const t = translations.home?.newArrivals || {};
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['newArrivals'],

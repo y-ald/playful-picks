@@ -3,9 +3,12 @@ import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { NavbarIcons } from './navbar/NavbarIcons';
 import { NavbarLinks } from './navbar/NavbarLinks';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { language, translations } = useLanguage();
+  const t = translations.navigation || {};
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">

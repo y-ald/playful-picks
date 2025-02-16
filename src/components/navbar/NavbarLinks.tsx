@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { Globe } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -42,3 +41,5 @@ export const NavbarLinks = ({ className = "" }: NavbarLinksProps) => {
     </div>
   );
 };
+
+export default NavbarLinks;

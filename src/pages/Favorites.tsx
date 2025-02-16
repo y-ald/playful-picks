@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Favorites = () => {
   const { toast } = useToast();
+  const { language, translations } = useLanguage();
+  const t = translations.favorites || {};
 
   const { data: favorites, isLoading, refetch } = useQuery({
     queryKey: ['favorites'],
@@ -44,14 +47,14 @@ const Favorites = () => {
 
       toast({
         title: "Success",
-        description: "Item removed from favorites"
+        description: t.removeSuccess
       });
       refetch();
     } catch (error) {
       console.error('Error removing favorite:', error);
       toast({
         title: "Error",
-        description: "Failed to remove from favorites",
+        description: t.removeError,
         variant: "destructive"
       });
     }
@@ -72,13 +75,13 @@ const Favorites = () => {
 
       toast({
         title: "Success",
-        description: "Item added to cart"
+        description: t.addToCartSuccess
       });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
         title: "Error",
-        description: "Failed to add to cart",
+        description: t.addToCartError,
         variant: "destructive"
       });
     }
@@ -92,9 +95,9 @@ const Favorites = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <div className="container mx-auto px-4 pt-24">
-        <h1 className="text-3xl font-bold mb-8">My Favorites</h1>
+        <h1 className="text-3xl font-bold mb-8">{t.title}</h1>
         {favorites?.length === 0 ? (
-          <p>No favorites yet</p>
+          <p>{t.empty}</p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {favorites?.map((favorite) => (
@@ -116,13 +119,14 @@ const Favorites = () => {
                     className="flex-1"
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart
+                    {t.addToCart}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => removeFavorite(favorite.id)}
                   >
                     <Trash2 className="h-4 w-4" />
+                    {t.remove}
                   </Button>
                 </div>
               </div>

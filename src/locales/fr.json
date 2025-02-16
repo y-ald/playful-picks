@@ -83,7 +83,9 @@
       "name": "Nom",
       "email": "Email",
       "message": "Message",
-      "send": "Envoyer le message"
+      "send": "Envoyer le message",
+      "sendSuccess": "Votre message a été envoyé",
+      "sendError": "Échec de l'envoi du message"
     },
     "social": {
       "title": "Suivez-nous",
@@ -142,6 +144,39 @@
     "addToCart": "Ajouter au panier",
     "remove": "Supprimer",
     "continueShopping": "Continuer les achats",
-    "price": "Prix"
+    "price": "Prix",
+    "addToCartSuccess": "Article ajouté au panier",
+    "addToCartError": "Échec de l'ajout de l'article au panier",
+    "addToFavoritesSuccess": "Ajouté aux favoris",
+    "addToFavoritesError": "Échec de l'ajout aux favoris",
+    "removeSuccess": "Article retiré des favoris",
+    "removeError": "Échec de la suppression des favoris"
+  },
+  "productDetails": {
+    "addToCart": "Ajouter au panier",
+    "addToFavorites": "Ajouter aux favoris",
+    "ageRange": "Tranche d'âge",
+    "authRequired": "Authentification requise",
+    "loginToAddToCart": "Veuillez vous connecter pour ajouter des articles au panier",
+    "loginToAddToFavorites": "Veuillez vous connecter pour ajouter des favoris",
+    "productNotFound": "Produit non trouvé"
+  },
+  "tracking": {
+    "title": "Suivi de la livraison",
+    "trackingNumber": "Numéro de suivi",
+    "carrier": "Transporteur",
+    "status": "Statut",
+    "estimatedDelivery": "Livraison estimée",
+    "trackingHistory": "Historique de suivi",
+    "loading": "Chargement des informations de suivi...",
+    "errorTitle": "Erreur",
+    "fetchError": "Échec de la récupération des informations de suivi",
+    "shipmentNotFound": "Aucune information de suivi trouvée",
+    "checkTrackingNumber": "Veuillez vérifier votre numéro de suivi et réessayer."
+  },
+  "notFound": {
+    "title": "404",
+    "description": "Oops! Page non trouvée",
+    "returnToHome": "Retourner à l'accueil"
   }
 }

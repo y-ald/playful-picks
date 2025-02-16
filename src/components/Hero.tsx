@@ -1,4 +1,3 @@
-
 import { motion } from 'framer-motion';
 import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
 import { Link } from 'react-router-dom';
