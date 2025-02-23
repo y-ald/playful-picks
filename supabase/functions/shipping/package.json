@@ -1,0 +1,12 @@
+{
+  "name": "shipping",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "node index.ts"
+  },
+  "dependencies": {
+    "shippo": "^2.0.0",
+    "@supabase/supabase-js": "^2.48.1"
+  }
+}
