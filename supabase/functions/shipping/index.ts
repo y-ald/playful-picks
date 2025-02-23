@@ -1,74 +1,59 @@
-import Shippo from 'shippo';
-import { createClient } from '@supabase/supabase-js';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import Shippo from "https://esm.sh/shippo@2.0.0"
 
-const shippo = new Shippo(process.env.SHippo_API_KEY);
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-export default async function handler(req, res) {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const { action, payload } = req.body;
+    const shippo = new Shippo(Deno.env.get('SHIPPO_API_KEY'))
+    const { action, payload } = await req.json()
 
     switch (action) {
-      case 'validateAddress':
-        const address = await shippo.address.create(payload);
-        const validation = await shippo.address.validate(address.object_id);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).json(validation);
-        break;
-
       case 'getRates':
-        const { fromAddress, toAddress, parcel } = payload;
+        const { fromAddress, toAddress, parcel } = payload
         const shipment = await shippo.shipment.create({
           address_from: fromAddress,
           address_to: toAddress,
           parcels: [parcel],
           async: false
-        });
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).json(shipment.rates);
-        break;
+        })
+        return new Response(JSON.stringify(shipment.rates), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
 
       case 'createLabel':
-        const { rateId } = payload;
+        const { rateId } = payload
         const transaction = await shippo.transaction.create({
           rate: rateId,
           async: false
-        });
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).json(transaction);
-        break;
+        })
+        return new Response(JSON.stringify(transaction), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
 
       case 'trackShipment':
-        const { carrier, trackingNumber } = payload;
-        const tracking = await shippo.track.get(carrier, trackingNumber);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Content-Type', 'application/json');
-        res.status(200).json(tracking);
-        break;
+        const { carrier, trackingNumber } = payload
+        const tracking = await shippo.track.get(carrier, trackingNumber)
+        return new Response(JSON.stringify(tracking), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
 
       default:
-        throw new Error('Invalid action');
+        throw new Error('Invalid action')
     }
   } catch (error) {
-    console.error('Shipping API Error:', error);
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Content-Type', 'application/json');
-    res.status(400).json({ error: error.message });
+    console.error('Shipping API Error:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400,
+    })
   }
-}
+})
