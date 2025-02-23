@@ -83,9 +83,7 @@
       "name": "Name",
       "email": "Email",
       "message": "Message",
-      "send": "Send Message",
-      "sendSuccess": "Your message has been sent",
-      "sendError": "Failed to send message"
+      "send": "Send Message"
     },
     "social": {
       "title": "Follow Us",
@@ -144,39 +142,6 @@
     "addToCart": "Add to Cart",
     "remove": "Remove",
     "continueShopping": "Continue Shopping",
-    "price": "Price",
-    "addToCartSuccess": "Item added to cart",
-    "addToCartError": "Failed to add item to cart",
-    "addToFavoritesSuccess": "Added to favorites",
-    "addToFavoritesError": "Failed to add to favorites",
-    "removeSuccess": "Item removed from favorites",
-    "removeError": "Failed to remove from favorites"
-  },
-  "productDetails": {
-    "addToCart": "Add to Cart",
-    "addToFavorites": "Add to Favorites",
-    "ageRange": "Age Range",
-    "authRequired": "Authentication required",
-    "loginToAddToCart": "Please login to add items to cart",
-    "loginToAddToFavorites": "Please login to add favorites",
-    "productNotFound": "Product not found"
-  },
-  "tracking": {
-    "title": "Shipment Tracking",
-    "trackingNumber": "Tracking Number",
-    "carrier": "Carrier",
-    "status": "Status",
-    "estimatedDelivery": "Estimated Delivery",
-    "trackingHistory": "Tracking History",
-    "loading": "Loading tracking information...",
-    "errorTitle": "Error",
-    "fetchError": "Failed to fetch tracking information",
-    "shipmentNotFound": "No tracking information found",
-    "checkTrackingNumber": "Please check your tracking number and try again."
-  },
-  "notFound": {
-    "title": "404",
-    "description": "Oops! Page not found",
-    "returnToHome": "Return to Home"
+    "price": "Price"
   }
 }

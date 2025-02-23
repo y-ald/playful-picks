@@ -41,5 +41,3 @@ export const NavbarLinks = ({ className = "" }: NavbarLinksProps) => {
     </div>
   );
 };
-
-export default NavbarLinks;

@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -35,7 +35,7 @@ const formSchema = z.object({
   shipping_rate: z.string().optional(),
 })
 
-export default function Checkout() {
+const  Checkout = () => {
   const [loading, setLoading] = useState(false)
   const [shippingRates, setShippingRates] = useState([])
   const [selectedRate, setSelectedRate] = useState(null)
@@ -57,6 +57,57 @@ export default function Checkout() {
       shipping_rate: "",
     },
   })
+
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+
+  const fetchAddressSuggestions = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('shipping', {
+        body: {
+          action: 'getAddressSuggestions',
+          payload: {
+            street1: form.watch('address'),
+            city: form.watch('city'),
+            state: form.watch('state'),
+            zip: form.watch('zipCode'),
+            country: form.watch('country'),
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      setSuggestions(data.suggestions);
+    } catch (error) {
+      console.error('Error fetching address suggestions:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch address suggestions",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'address' && value.address.length > 3) {
+        fetchAddressSuggestions();
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  const handleSuggestionClick = (suggestion: any) => {
+    setSelectedSuggestion(suggestion);
+    form.setValue('address', suggestion.street1);
+    form.setValue('city', suggestion.city);
+    form.setValue('state', suggestion.state);
+    form.setValue('zipCode', suggestion.zip_code);
+    form.setValue('country', suggestion.country);
+    setSuggestions([]);
+  };
 
   const validateAddress = async (values: z.infer<typeof formSchema>) => {
     try {
@@ -98,7 +149,7 @@ export default function Checkout() {
     }
   }
 
-  const fetchShippingRates = async (values: z.infer<typeof formSchema>) => {
+  const fetchShippingRates = async () => {
     try {
       const { data, error } = await supabase.functions.invoke('shipping', {
         body: {
@@ -113,12 +164,12 @@ export default function Checkout() {
               country: "CA",
             },
             toAddress: {
-              name: values.name,
-              street1: values.address,
-              city: values.city,
-              state: values.state,
-              zip: values.zipCode,
-              country: values.country,
+              name: form.watch('name'),
+              street1: form.watch('address'),
+              city: form.watch('city'),
+              state: form.watch('state'),
+              zip: form.watch('zipCode'),
+              country: form.watch('country'),
             },
             parcel: {
               length: "20",
@@ -202,7 +253,7 @@ export default function Checkout() {
   const handleAddressSubmit = async (values: z.infer<typeof formSchema>) => {
     const isValidAddress = await validateAddress(values)
     if (isValidAddress) {
-      await fetchShippingRates(values)
+      await fetchShippingRates();
     }
   }
 
@@ -226,7 +277,7 @@ export default function Checkout() {
           <Card className="p-8">
             <h2 className="text-2xl font-semibold mb-6">Shipping Information</h2>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleAddressSubmit)} className="space-y-6">
+              <form onSubmit={form.handleSubmit(handleAddressSubmit)} className="space-y-6 relative">
                 <FormField
                   control={form.control}
                   name="name"
@@ -265,6 +316,19 @@ export default function Checkout() {
                         <Input {...field} className="text-lg" />
                       </FormControl>
                       <FormMessage />
+                      {suggestions.length > 0 && (
+                        <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                          {suggestions.map((suggestion: any) => (
+                            <li
+                              key={suggestion.street1}
+                              className="cursor-pointer p-2 hover:bg-gray-100"
+                              onClick={() => handleSuggestionClick(suggestion)}
+                            >
+                              {suggestion.street1}, {suggestion.city}, {suggestion.state}, {suggestion.zip_code}, {suggestion.country}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </FormItem>
                   )}
                 />
@@ -345,7 +409,7 @@ export default function Checkout() {
                   className="w-full text-lg py-6" 
                   disabled={loading}
                 >
-                  Calculate Shipping
+                  {loading ? "Processing..." : "Calculate Shipping"}
                 </Button>
               </form>
             </Form>
@@ -435,3 +499,5 @@ export default function Checkout() {
     </div>
   )
 }
+
+export default Checkout;

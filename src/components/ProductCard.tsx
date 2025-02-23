@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
-import { useToast } from '@/components/ui/use-toast';
+import { Button } from './ui/button';
+import { useToast } from './ui/use-toast';
 import { useCart } from '@/hooks/useCart';
-import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Product {
   id: string;
@@ -21,8 +21,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { toast } = useToast();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
-  const { translations } = useLanguage();
-  const t = translations.shop || {};
   const isProductFavorite = isFavorite(product.id);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
@@ -31,21 +29,21 @@ const ProductCard = ({ product }: ProductCardProps) => {
       if (isProductFavorite) {
         await removeFromFavorites(product.id);
         toast({
-          title: t.removeFavorite,
-          description: `${product.name} ${t.hasBeenRemovedFromFavorites}`
+          title: "Removed from favorites",
+          description: `${product.name} has been removed from your favorites`
         });
       } else {
         await addToFavorites(product.id);
         toast({
-          title: t.addToFavorites,
-          description: `${product.name} ${t.hasBeenAddedToFavorites}`
+          title: "Added to favorites",
+          description: `${product.name} has been added to your favorites`
         });
       }
     } catch (error) {
       console.error('Error updating favorites:', error);
       toast({
         title: "Error",
-        description: t.failedToUpdateFavorites,
+        description: "Failed to update favorites",
         variant: "destructive"
       });
     }
@@ -56,14 +54,14 @@ const ProductCard = ({ product }: ProductCardProps) => {
     try {
       await addToCart(product.id);
       toast({
-        title: t.addToCart,
-        description: `${product.name} ${t.hasBeenAddedToCart}`
+        title: "Added to cart",
+        description: `${product.name} has been added to your cart`
       });
     } catch (error) {
       console.error('Error adding to cart:', error);
       toast({
         title: "Error",
-        description: t.failedToAddItemToCart,
+        description: "Failed to add item to cart",
         variant: "destructive"
       });
     }
@@ -98,7 +96,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         onClick={handleAddToCart}
         className="w-full bg-primary hover:bg-primary-hover text-white"
       >
-        {t.addToCart}
+        Add to Cart
       </Button>
     </div>
   );

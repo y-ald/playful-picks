@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import Shippo from "https://esm.sh/shippo@2.0.0"
+import { corsHeaders } from './config.ts'
+import { ShippingRequest, ShippingResponse, ErrorResponse } from './types.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+// Load environment variables
+const env = Deno.env.toObject();
+const shippoApiKey = env.SHIPPO_API_KEY || '';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -13,16 +14,21 @@ serve(async (req) => {
   }
 
   try {
-    const shippo = new Shippo(Deno.env.get('SHIPPO_API_KEY'))
-    const { action, payload } = await req.json()
+    const { action, payload }: ShippingRequest = await req.json()
+
+    if (!shippoApiKey) {
+      throw new Error('Shippo API key is not set');
+    }
+
+    const shippo = new Shippo(shippoApiKey)
+
+    let response: ShippingResponse;
 
     switch (action) {
       case 'validateAddress':
         const address = await shippo.address.create(payload)
-        const validation = await shippo.address.validate(address.object_id)
-        return new Response(JSON.stringify(validation), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        response = await shippo.address.validate(address.object_id)
+        break;
 
       case 'getRates':
         const { fromAddress, toAddress, parcel } = payload
@@ -32,35 +38,53 @@ serve(async (req) => {
           parcels: [parcel],
           async: false
         })
-        return new Response(JSON.stringify(shipment.rates), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        response = shipment.rates
+        break;
 
       case 'createLabel':
         const { rateId } = payload
-        const transaction = await shippo.transaction.create({
+        response = await shippo.transaction.create({
           rate: rateId,
           async: false
         })
-        return new Response(JSON.stringify(transaction), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        break;
 
       case 'trackShipment':
         const { carrier, trackingNumber } = payload
-        const tracking = await shippo.track.get(carrier, trackingNumber)
-        return new Response(JSON.stringify(tracking), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        response = await shippo.track.get(carrier, trackingNumber)
+        break;
+
+      case 'getAddressSuggestions':
+        const { street1, city, state, zip, country } = payload
+        const suggestions = await shippo.address.suggest({
+          street1,
+          city,
+          state,
+          zip_code: zip,
+          country,
         })
+        response = suggestions
+        break;
 
       default:
         throw new Error('Invalid action')
     }
+
+    return new Response(
+      JSON.stringify(response),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   } catch (error) {
     console.error('Shipping API Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
-    })
+    const response: ErrorResponse = { error: error.message }
+    return new Response(
+      JSON.stringify(response),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      },
+    )
   }
 })

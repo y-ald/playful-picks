@@ -67,3 +67,37 @@ Simply open [Lovable](https://lovable.dev/projects/3923f859-5de7-429d-b09a-7e8f1
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+
+
+```
+
+### Deployment Instructions
+
+1. **Install Supabase CLI** (if not already installed):
+   ```sh
+   npm install -g supabase
+   ```
+
+2. **Login to Supabase**:
+   ```sh
+   npx supabase login
+   ```
+
+3. **Link Your Project**:
+   ```sh
+   npx supabase link --project-ref ktmqwhkywxogxktuqcfx
+   ```
+
+4. **Deploy the Functions**:
+   ```sh
+   npx supabase functions deploy create-checkout --project-ref ktmqwhkywxogxktuqcfx
+   npx supabase functions deploy shipping --project-ref ktmqwhkywxogxktuqcfx
+   ```
+
+5. **Set Environment Variables**:
+   ```sh
+   npx supabase secrets set STRIPE_SECRET_KEY=sk_test_51Qo5AED5AuH6As8BXyi78HRoRs766g3mxTeBTIzKt4gVfaSPxrMMtzqPrWfTozlRIVgg2O26jFTaqjLp7NBJAHGq00JEZDUhcV --project-ref ktmqwhkywxogxktuqcfx
+   npx supabase secrets set SHIPPO_API_KEY=shippo_test_e7f0b7714d8b67b554393749c3c9b91c9a89cc28 --project-ref ktmqwhkywxogxktuqcfx
+   ```
+
+By following these steps, you will have address auto-completion implemented using Shippo in your Supabase serverless functions. The frontend will fetch and display address suggestions as the user types, and the selected suggestion will be used to validate the full address.
