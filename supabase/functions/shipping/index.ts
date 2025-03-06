@@ -17,6 +17,13 @@ serve(async (req) => {
     const { action, payload } = await req.json()
 
     switch (action) {
+      case 'validateAddress':
+        const address = await shippo.address.create(payload)
+        const validation = await shippo.address.validate(address.object_id)
+        return new Response(JSON.stringify(validation), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+
       case 'getRates':
         const { fromAddress, toAddress, parcel } = payload
         const shipment = await shippo.shipment.create({
