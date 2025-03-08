@@ -26,6 +26,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from '@/components/Navbar';
 import { mapboxClient } from "@/integrations/mapbox/client";
+import { c } from "node_modules/framer-motion/dist/types.d-6pKw1mTI"
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -127,7 +128,7 @@ export default function Checkout() {
         body: {
           action: 'getRates',
           payload: {
-            fromAddress: {
+            address_from: {
               name: "Kaia Kids Store",
               street1: "123 Warehouse St",
               city: "Montreal",
@@ -135,7 +136,7 @@ export default function Checkout() {
               zip: "H2X 1Y6",
               country: "CA",
             },
-            toAddress: {
+            address_to: {
               name: values.name,
               street1: values.address,
               city: values.city,
@@ -143,10 +144,10 @@ export default function Checkout() {
               zip: values.zipCode,
               country: values.country,
             },
-            parcel: {
+            parcels: {
               length: "20",
               width: "15",
-              height: "10",
+              height: "8",
               distance_unit: "cm",
               weight: "1",
               mass_unit: "kg",
@@ -275,10 +276,9 @@ export default function Checkout() {
   };
 
   const handleAddressSubmit = async (values: z.infer<typeof formSchema>) => {
-    const isValidAddress = await validateAddress(values)
-    if (isValidAddress) {
-      await fetchShippingRates(values)
-    }
+    //const isValidAddress = await validateAddress(values)
+    await fetchShippingRates(values)
+    
   }
 
   if (cartItems.length === 0) {
@@ -296,7 +296,7 @@ export default function Checkout() {
     <div className="min-h-screen container mx-auto p-4">
       <Navbar />
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 text-center">{t.title}</h1>
+        <h1 className="text-4xl font-bold mb-8 text-center">Checkout</h1>
 
         <div className="grid gap-8 md:grid-cols-[1fr,400px]">
           <Card className="p-8">
@@ -308,7 +308,7 @@ export default function Checkout() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.form?.name}</FormLabel>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
                         <Input {...field} className="text-lg" />
                       </FormControl>
@@ -322,7 +322,7 @@ export default function Checkout() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.form?.email}</FormLabel>
+                      <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" {...field} className="text-lg" />
                       </FormControl>
@@ -380,7 +380,7 @@ export default function Checkout() {
                   name="address"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t.form?.address}</FormLabel>
+                      <FormLabel>Street Address</FormLabel>
                       <FormControl>
                         <Input 
                           {...field} 
@@ -413,7 +413,7 @@ export default function Checkout() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.form?.city}</FormLabel>
+                        <FormLabel>City</FormLabel>
                         <FormControl>
                           <Input {...field} className="text-lg" />
                         </FormControl>
@@ -427,7 +427,7 @@ export default function Checkout() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t.form?.state}</FormLabel>
+                        <FormLabel>Province/State</FormLabel>
                         <FormControl>
                           <Input {...field} className="text-lg" />
                         </FormControl>
@@ -442,14 +442,14 @@ export default function Checkout() {
                   className="w-full text-lg py-6" 
                   disabled={loading}
                 >
-                  {loading ? 'Loading...' : t.calculateShipping}
+                  Calculate Shipping
                 </Button>
               </form>
             </Form>
 
             {shippingRates.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">{t.shippingOptions}</h3>
+                <h3 className="text-xl font-semibold mb-4">Shipping Options</h3>
                 <div className="space-y-4">
                   {shippingRates.map((rate: any) => (
                     <div
@@ -461,7 +461,7 @@ export default function Checkout() {
                         <p className="font-medium">{rate.provider}</p>
                         <p className="text-sm text-gray-600">{rate.servicelevel.name}</p>
                         <p className="text-sm text-gray-600">
-                          {t.estimatedDays.replace('{days}', rate.estimated_days)}
+                          Estimated delivery: {rate.estimated_days} days
                         </p>
                       </div>
                       <div className="text-lg font-semibold">
@@ -476,7 +476,7 @@ export default function Checkout() {
                   className="w-full text-lg py-6 mt-6" 
                   disabled={loading || !selectedRate}
                 >
-                  {loading ? "Processing..." : t.proceedToPayment}
+                  {loading ? "Processing..." : "Proceed to Payment"}
                 </Button>
               </div>
             )}
@@ -484,7 +484,7 @@ export default function Checkout() {
 
           <div className="space-y-6">
             <Card className="p-6">
-              <h3 className="text-xl font-semibold mb-4">{t.orderSummary}</h3>
+              <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
               <div className="space-y-4">
                 {cartItems.map((item: any) => (
                   <div key={item.id} className="flex justify-between items-center">
@@ -509,17 +509,17 @@ export default function Checkout() {
               </div>
               <div className="border-t mt-6 pt-4">
                 <div className="flex justify-between items-center text-lg font-semibold">
-                  <span>{t.subtotal}</span>
+                  <span>Subtotal</span>
                   <span>${total.toFixed(2)}</span>
                 </div>
                 {selectedRate && (
                   <div className="flex justify-between items-center mt-2">
-                    <span>{t.shipping}</span>
+                    <span>Shipping</span>
                     <span>${parseFloat(selectedRate.amount).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center mt-4 text-xl font-bold">
-                  <span>{t.total}</span>
+                  <span>Total</span>
                   <span>
                     ${(total + (selectedRate ? parseFloat(selectedRate.amount) : 0)).toFixed(2)}
                   </span>

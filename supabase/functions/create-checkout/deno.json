@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "serve": "deno run --allow-net --allow-env index.ts"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "importMap": {
+    "imports": {
+      "stripe": "https://esm.sh/stripe@14.21.0?target=deno"
+    }
+  }
+}
