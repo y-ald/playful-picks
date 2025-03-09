@@ -81,47 +81,6 @@ export default function Checkout() {
     },
   })
 
-  const validateAddress = async (values: z.infer<typeof formSchema>) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.functions.invoke('shipping', {
-        body: {
-          action: 'validateAddress',
-          payload: {
-            name: values.name,
-            street1: values.address,
-            city: values.city,
-            state: values.state,
-            zip: values.zipCode,
-            country: values.country,
-            validate: true,
-          },
-        },
-      })
-
-      if (error) throw error
-
-      if (!data.validation_results.is_valid) {
-        toast({
-          variant: "destructive",
-          title: "Invalid Address",
-          description: "Please check your shipping address and try again.",
-        })
-        return false
-      }
-
-      return true
-    } catch (error) {
-      console.error('Address validation error:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to validate address",
-      })
-      return false
-    }
-  }
-
   const fetchShippingRates = async (values: z.infer<typeof formSchema>) => {
     try {
       const { data, error } = await supabase.functions.invoke('shipping', {
@@ -190,12 +149,6 @@ export default function Checkout() {
 
     setLoading(true)
     try {
-      /* const isValidAddress = await validateAddress(values)
-      if (!isValidAddress) {
-        setLoading(false)
-        return
-      } */
-
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           cartItems,
@@ -276,7 +229,6 @@ export default function Checkout() {
   };
 
   const handleAddressSubmit = async (values: z.infer<typeof formSchema>) => {
-    //const isValidAddress = await validateAddress(values)
     await fetchShippingRates(values)
     
   }

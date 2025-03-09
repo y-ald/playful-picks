@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { validateAddress, getRates, createLabel, trackShipment } from "./api.ts"
+import { getRates, createLabel, trackShipment } from "./api.ts"
 import { corsHeaders } from "./cors.ts"
 
 serve(async (req) => {
@@ -12,12 +12,6 @@ serve(async (req) => {
     const { action, payload } = await req.json()
 
     switch (action) {
-      case 'validateAddress':
-        const validation = await validateAddress(payload)
-        return new Response(JSON.stringify(validation), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-
       case 'getRates':
         const rates = await getRates(payload)
         return new Response(JSON.stringify(rates), {

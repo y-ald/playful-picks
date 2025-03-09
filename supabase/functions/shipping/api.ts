@@ -9,20 +9,6 @@ const headers = {
   'Content-Type': 'application/json',
 }
 
-const validateAddress = async (address: any) => {
-  const response = await fetchWithTimeout(`${SHIPPO_API_URL}/addresses/validate`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(address),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to validate address')
-  }
-
-  return await response.json()
-}
-
 const getRates = async (shipment: any) => {
   const response = await fetchWithTimeout(`${SHIPPO_API_URL}/shipments`, {
     method: 'POST',
@@ -65,4 +51,4 @@ const trackShipment = async (tracking: any) => {
   return await response.json()
 }
 
-export { validateAddress, getRates, createLabel, trackShipment }
+export { getRates, createLabel, trackShipment }
