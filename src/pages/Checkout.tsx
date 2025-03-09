@@ -180,7 +180,7 @@ export default function Checkout() {
     const query = e.target.value;
     form.setValue('address', query);
 
-    if (query.length % 7 == 0) {
+    if (query.length % 4 == 0) {
       const country = form.getValues('country');
       const languageCode = language === 'en' ? 'en' : 'fr';
       try {

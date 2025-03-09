@@ -9,7 +9,6 @@ export const mapboxClient = {
         q: query,
         language: language,
         country: country,
-        limit: 5,
         access_token: MAPBOX_ACCESS_TOKEN,
       },
     });
