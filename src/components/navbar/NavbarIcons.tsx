@@ -3,33 +3,21 @@ import { Heart, ShoppingCart, Search, LogIn } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useCartStorage } from '@/hooks/useCartStorage';
 
 export const NavbarIcons = () => {
   const clientId = localStorage.getItem('anonymous_favorites_id');
   const { language, translations, setLanguage } = useLanguage();
   const location = useLocation();
-  
+  const isAuthenticated = useAuthStatus();
+  const { cartItems } = useCartStorage();
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'fr' : 'en');
   };
 
-  const { data: cartCount = 0 } = useQuery({
-    queryKey: ['cartCount'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('cart_items')
-        .select('*', { count: 'exact' });
-      
-      if (error) {
-        console.error('Error fetching cart count:', error);
-        return 0;
-      }
-      
-      return data?.length || 0;
-    },
-    refetchInterval: 1000
-  });
+  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   const { data: favoritesCount = 0 } = useQuery({
     queryKey: ['favoritesCount', clientId],

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { v4 as uuidv4 } from 'uuid';
 
 const CART_KEY = 'cart';
 const CART_TIMESTAMP_KEY = 'cart_timestamp';
@@ -53,6 +54,30 @@ export const useCartStorage = () => {
     initializeCart();
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (isAuthenticated) {
+      const channel = supabase
+        .channel('custom-filter-channel')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cart_items',
+            filter: `user_id=eq.${supabase.auth.user()?.id}`,
+          },
+          (payload) => {
+            initializeCart();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isAuthenticated]);
+
   const addToCart = async (productId: string, quantity: number) => {
     if (isAuthenticated) {
       // Add to database for authenticated users
@@ -97,11 +122,19 @@ export const useCartStorage = () => {
       }
     } else {
       // Add to localStorage for unauthenticated users
-      const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-      const newCartItems = [...storedCart, { product_id: productId, quantity: quantity }];
-      localStorage.setItem(CART_KEY, JSON.stringify(newCartItems));
+      var storedCart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+      const existingItemIndex = storedCart.findIndex(item => item.product_id === productId);
+
+      if (existingItemIndex !== -1) {
+        // If the item exists, update its quantity
+        storedCart[existingItemIndex].quantity += quantity;
+      } else {
+        // If the item doesn't exist, add as new
+        storedCart = [...storedCart, {id: uuidv4(), product_id: productId, quantity: quantity }];
+      }
+      localStorage.setItem(CART_KEY, JSON.stringify(storedCart));
       localStorage.setItem(CART_TIMESTAMP_KEY, Date.now().toString());
-      setCartItems(newCartItems);
+      setCartItems(storedCart);
     }
   };
 

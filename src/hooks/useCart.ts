@@ -8,7 +8,6 @@ export const useCart = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { cartItems, addToCart, updateQuantity, removeItem, calculateTotal } = useCartStorage();
-
   const handleAddToCart = async (productId: string) => {
     try {
       await addToCart(productId, 1);
