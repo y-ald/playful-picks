@@ -81,7 +81,7 @@ export default function Cart() {
     navigate(`/${language}/checkout`, { 
       state: { 
         cartItems,
-        total: calculateTotal()
+        total: calculateTotal(cartItems)
       }
     })
   }
