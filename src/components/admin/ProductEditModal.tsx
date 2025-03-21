@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -10,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ImageUploader } from './ImageUploader';
-import { ProductFieldsGrid } from './ProductFieldsGrid';
+import { ProductFieldsGrid, ProductFormValues } from './ProductFieldsGrid';
 import {
   Dialog,
   DialogContent,
@@ -35,8 +34,6 @@ const productSchema = z.object({
   category: z.string().min(1, { message: 'Category is required' }),
   age_range: z.string().min(1, { message: 'Age range is required' }),
 });
-
-type ProductFormValues = z.infer<typeof productSchema>;
 
 type Product = {
   id: string;
@@ -74,7 +71,6 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
     },
   });
 
-  // Update form when product changes
   useEffect(() => {
     form.reset({
       name: product.name || '',
@@ -102,7 +98,6 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
     try {
       let image_url = product.image_url;
       
-      // Upload new image if one is selected
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -115,7 +110,6 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
           throw uploadError;
         }
         
-        // Get public URL for the uploaded image
         const { data: publicURL } = supabase.storage
           .from('products')
           .getPublicUrl(fileName);
@@ -123,7 +117,6 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
         image_url = publicURL.publicUrl;
       }
       
-      // Update product in the database
       const { data: updatedProduct, error } = await supabase
         .from('products')
         .update({

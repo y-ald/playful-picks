@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -7,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Upload } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ImageUploader } from './ImageUploader';
-import { ProductFieldsGrid } from './ProductFieldsGrid';
+import { ProductFieldsGrid, ProductFormValues } from './ProductFieldsGrid';
 import {
   Form,
   FormControl,
@@ -28,8 +27,6 @@ const productSchema = z.object({
   category: z.string().min(1, { message: 'Category is required' }),
   age_range: z.string().min(1, { message: 'Age range is required' }),
 });
-
-type ProductFormValues = z.infer<typeof productSchema>;
 
 export function AddProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,12 +61,10 @@ export function AddProductForm() {
     try {
       let image_url = null;
       
-      // Upload image if one is selected
       if (selectedImage) {
         const fileExt = selectedImage.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         
-        // Check if products bucket exists, create it if not
         const { data: buckets } = await supabase.storage.listBuckets();
         if (!buckets?.find(bucket => bucket.name === 'products')) {
           await supabase.storage.createBucket('products', { public: true });
@@ -83,7 +78,6 @@ export function AddProductForm() {
           throw uploadError;
         }
         
-        // Get public URL for the uploaded image
         const { data: publicURL } = supabase.storage
           .from('products')
           .getPublicUrl(fileName);
@@ -91,7 +85,6 @@ export function AddProductForm() {
         image_url = publicURL.publicUrl;
       }
       
-      // Insert product into the database with proper types
       const { data: product, error } = await supabase
         .from('products')
         .insert({
@@ -115,7 +108,6 @@ export function AddProductForm() {
         description: `${data.name} has been added to inventory`,
       });
       
-      // Reset form and image preview
       form.reset();
       setSelectedImage(null);
       setImagePreview(null);

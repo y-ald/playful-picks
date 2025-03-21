@@ -9,7 +9,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 
-interface ProductFormValues {
+export interface ProductFormValues {
   name: string;
   description: string;
   price: number;
@@ -18,8 +18,9 @@ interface ProductFormValues {
   age_range: string;
 }
 
+// Using Partial to make all properties optional for compatibility
 interface ProductFieldsGridProps {
-  form: UseFormReturn<ProductFormValues>;
+  form: UseFormReturn<Partial<ProductFormValues> | ProductFormValues>;
 }
 
 export function ProductFieldsGrid({ form }: ProductFieldsGridProps) {
