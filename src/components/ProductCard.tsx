@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useFavoritesStorage } from '@/hooks/useFavoritesStorage';
 import { Button } from './ui/button';
 import { useToast } from './ui/use-toast';
 import { useCart } from '@/hooks/useCart';
@@ -19,14 +19,13 @@ interface ProductCardProps {
 
 const ProductCard = ({ product }: ProductCardProps) => {
   const { toast } = useToast();
-  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavoritesStorage();
   const { addToCart } = useCart();
-  const isProductFavorite = isFavorite(product.id);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     try {
-      if (isProductFavorite) {
+      if (isFavorite(product.id)) {
         await removeFromFavorites(product.id);
         toast({
           title: "Removed from favorites",
@@ -82,7 +81,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           >
             <Heart
               className={`w-5 h-5 ${
-                isProductFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'
+                isFavorite(product.id) ? 'fill-red-500 text-red-500' : 'text-gray-600'
               }`}
             />
           </button>
@@ -93,7 +92,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <p className="text-primary font-bold mb-4">${product.price.toFixed(2)}</p>
       </Link>
       <Button 
-        onClick={handleAddToCart}
+        onClick={() => addToCart(product.id)}
         className="w-full bg-primary hover:bg-primary-hover text-white"
       >
         Add to Cart
