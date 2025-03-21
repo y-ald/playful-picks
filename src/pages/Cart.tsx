@@ -1,14 +1,18 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/integrations/supabase/client"
+import { useCartStorage } from "@/hooks/useCartStorage"
+import { useCart } from "@/hooks/useCart"
 import { useLanguage } from "@/contexts/LanguageContext"
+import { supabase } from "@/integrations/supabase/client"
+
 
 interface CartItem {
   id: string
   quantity: number
+  product_id: string
   product: {
     id: string
     name: string
@@ -25,109 +29,59 @@ export default function Cart() {
   const { language, translations, setLanguage } = useLanguage();
   const location = useLocation();
 
+  const { cartItems: storageCartItems, addToCart, updateQuantity, removeItem, calculateTotal } = useCart();
+
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'fr' : 'en');
   };
 
-
-  useEffect(() => {
-    fetchCartItems()
-  }, [])
-
-  const fetchCartItems = async () => {
+  const fetchCartItems = useCallback(async () => {
     try {
-      const { data: cartData, error: cartError } = await supabase
-        .from('cart_items')
-        .select(`
-          id,
-          quantity,
-          product:products (
-            id,
-            name,
-            price,
-            image_url
-          )
-        `)
-        .order('created_at', { ascending: false })
+      setLoading(true);
+      const productIds = storageCartItems.map((item) => item.product_id);
 
-      if (cartError) throw cartError
+      const { data: productsData, error: productsError } = await supabase
+        .from("products")
+        .select("id, name, price, image_url")
+        .in("id", productIds);
 
-      // Filter out items with null products
-      const validCartItems = (cartData as CartItem[]).filter(item => item.product !== null)
-      setCartItems(validCartItems)
+      if (productsError) throw productsError;
+
+      const productsMap = (productsData || []).reduce((acc: Record<string, any>, product: any) => {
+        acc[product.id] = product;
+        return acc;
+      }, {});
+
+      const updatedCartItems: CartItem[] = storageCartItems.map((item) => ({
+        id: item.id,
+        quantity: item.quantity,
+        product_id: item.product_id,
+        product: productsMap[item.product_id] || null,
+      }));
+
+      setCartItems(updatedCartItems);
     } catch (error) {
-      console.error('Error fetching cart items:', error)
+      console.error("Error fetching cart items:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to load cart items",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [storageCartItems, toast]);
 
-  const updateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return
-
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .update({ quantity: newQuantity })
-        .eq('id', itemId)
-
-      if (error) throw error
-
-      setCartItems(items =>
-        items.map(item =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      )
-    } catch (error) {
-      console.error('Error updating quantity:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update quantity",
-      })
-    }
-  }
-
-  const removeItem = async (itemId: string) => {
-    try {
-      const { error } = await supabase
-        .from('cart_items')
-        .delete()
-        .eq('id', itemId)
-
-      if (error) throw error
-
-      setCartItems(items => items.filter(item => item.id !== itemId))
-      toast({
-        title: "Success",
-        description: "Item removed from cart",
-      })
-    } catch (error) {
-      console.error('Error removing item:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to remove item",
-      })
-    }
-  }
-
-  const calculateTotal = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (item.product?.price || 0) * item.quantity
-    }, 0)
-  }
+  // useEffect to fetch data on mount and when storageCartItems change
+  useEffect(() => {
+    fetchCartItems();
+  }, [fetchCartItems]);
 
   const handleCheckout = () => {
     navigate(`/${language}/checkout`, { 
       state: { 
         cartItems,
-        total: calculateTotal()
+        total: calculateTotal(cartItems)
       }
     })
   }
@@ -204,7 +158,7 @@ export default function Cart() {
             <h3 className="font-semibold mb-2">Order Summary</h3>
             <div className="flex justify-between mb-4">
               <span>Total</span>
-              <span>${calculateTotal().toFixed(2)}</span>
+              <span>${calculateTotal(cartItems).toFixed(2)}</span>
             </div>
             <Button className="w-full" onClick={handleCheckout}>
               Proceed to Checkout

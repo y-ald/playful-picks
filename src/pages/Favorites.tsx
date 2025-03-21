@@ -4,44 +4,44 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
+import { useFavoritesStorage } from '@/hooks/useFavoritesStorage';
+import { useCart } from '@/hooks/useCart';
 
 const Favorites = () => {
   const { toast } = useToast();
+  const { favoritesId, isFavorite, removeFromFavorites } = useFavoritesStorage();
+  const { addToCart } = useCart();
 
   const { data: favorites, isLoading, refetch } = useQuery({
     queryKey: ['favorites'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!favoritesId) return [];
 
-      const { data, error } = await supabase
-        .from('favorites')
-        .select(`
-          id,
-          product:products (
-            id,
-            name,
-            price,
-            image_url,
-            description
-          )
-        `)
-        .eq('user_id', user.id);
+      if (favoritesId.includes(',')) {
+        const productIds = favoritesId.split(',');
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .in('id', productIds);
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } else {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', favoritesId);
+
+        if (error) throw error;
+        return data;
+      }
     },
+    enabled: !!favoritesId,
   });
 
-  const removeFavorite = async (favoriteId: string) => {
+  const removeFavorite = async (productId: string) => {
     try {
-      const { error } = await supabase
-        .from('favorites')
-        .delete()
-        .eq('id', favoriteId);
-
-      if (error) throw error;
-
+      await removeFromFavorites(productId);
       toast({
         title: "Success",
         description: "Item removed from favorites"
@@ -52,33 +52,6 @@ const Favorites = () => {
       toast({
         title: "Error",
         description: "Failed to remove from favorites",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const addToCart = async (productId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from('cart_items')
-        .insert([
-          { user_id: user.id, product_id: productId, quantity: 1 }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Item added to cart"
-      });
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add to cart",
         variant: "destructive"
       });
     }
@@ -97,22 +70,22 @@ const Favorites = () => {
           <p>No favorites yet</p>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites?.map((favorite) => (
+            {favorites?.map((favorite: any) => (
               <div key={favorite.id} className="border rounded-lg p-4">
                 <img
-                  src={favorite.product.image_url || '/placeholder.svg'}
-                  alt={favorite.product.name}
+                  src={favorite.image_url || '/placeholder.svg'}
+                  alt={favorite.name}
                   className="w-full h-48 object-cover rounded-lg mb-4"
                 />
                 <h3 className="font-semibold text-lg mb-2">
-                  {favorite.product.name}
+                  {favorite.name}
                 </h3>
                 <p className="text-primary font-bold mb-4">
-                  ${favorite.product.price.toFixed(2)}
+                  ${favorite.price.toFixed(2)}
                 </p>
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => addToCart(favorite.product.id)}
+                    onClick={() => addToCart(favorite.id)}
                     className="flex-1"
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />

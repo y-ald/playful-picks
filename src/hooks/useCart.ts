@@ -1,73 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useEffect, useState } from 'react';
-
-// Generate a random client ID for anonymous users
-const generateClientId = () => {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
-};
+import { useCartStorage } from '@/hooks/useCartStorage';
 
 export const useCart = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [clientId, setClientId] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Check localStorage for existing client ID
-    const existingClientId = localStorage.getItem('cart_client_id');
-    if (existingClientId) {
-      setClientId(existingClientId);
-    } else {
-      // Generate and store new client ID
-      const newClientId = generateClientId();
-      localStorage.setItem('cart_client_id', newClientId);
-      setClientId(newClientId);
-    }
-  }, []);
-
-  const addToCart = async (productId: string) => {
+  const { cartItems, addToCart, updateQuantity, removeItem, calculateTotal } = useCartStorage();
+  const handleAddToCart = async (productId: string) => {
     try {
-      // Get current user and client ID
-      const { data: { user } } = await supabase.auth.getUser();
-      const currentClientId = user ? null : clientId;
-
-      const { data: existingItem, error: fetchError } = await supabase
-        .from('cart_items')
-        .select('*')
-        .eq('product_id', productId)
-        .eq(user ? 'user_id' : 'client_id', user ? user.id : currentClientId)
-        .maybeSingle();
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      if (existingItem) {
-        // Update quantity if item exists
-        const { error: updateError } = await supabase
-          .from('cart_items')
-          .update({ quantity: existingItem.quantity + 1 })
-          .eq('id', existingItem.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Insert new item if it doesn't exist
-        const { error: insertError } = await supabase
-          .from('cart_items')
-          .insert([{ 
-            product_id: productId, 
-            quantity: 1,
-            user_id: user?.id || null,
-            client_id: currentClientId
-          }]);
-
-        if (insertError) throw insertError;
-      }
-
-      // Invalidate cart count query to update the badge
-      await queryClient.invalidateQueries({ queryKey: ['cartCount'] });
-
+      await addToCart(productId, 1);
       toast({
         title: "Added to cart",
         description: "Item has been added to your cart",
@@ -82,8 +25,45 @@ export const useCart = () => {
     }
   };
 
+  const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
+    try {
+      await updateQuantity(itemId, newQuantity);
+      toast({
+        title: "Quantity Updated",
+        description: "Item quantity has been updated",
+      });
+    } catch (error) {
+      console.error('Error in updateQuantity:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update item quantity",
+      });
+    }
+  };
+
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      await removeItem(itemId);
+      toast({
+        title: "Item Removed",
+        description: "Item has been removed from your cart",
+      });
+    } catch (error) {
+      console.error('Error in removeItem:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to remove item from cart",
+      });
+    }
+  };
+
   return {
-    addToCart,
-    clientId,
+    cartItems,
+    addToCart: handleAddToCart,
+    updateQuantity: handleUpdateQuantity,
+    removeItem: handleRemoveItem,
+    calculateTotal,
   };
 };
