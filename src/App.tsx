@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import TrackingPage from "./pages/TrackingPage";
 import ProfilePage from "./pages/account/ProfilePage";
 import AddressesPage from "./pages/account/AddressesPage";
+import AdminPage from "./pages/account/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               {/* Account Settings Routes */}
               <Route path="account" element={<ProfilePage />} />
               <Route path="account/addresses" element={<AddressesPage />} />
+              <Route path="account/admin" element={<AdminPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

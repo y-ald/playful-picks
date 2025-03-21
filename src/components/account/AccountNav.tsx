@@ -2,11 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { User, Map, LogOut } from "lucide-react";
+import { User, Map, LogOut, ShoppingBag } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 interface NavItemProps {
   to: string;
@@ -37,10 +38,30 @@ export function AccountNav() {
   const { lang } = useParams<{ lang: string }>();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === `/${lang}${path}`;
   };
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+          
+        setIsAdmin(!!data?.is_admin);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -71,6 +92,7 @@ export function AccountNav() {
       >
         Profile
       </NavItem>
+      
       <NavItem
         to={`/${lang}/account/addresses`}
         icon={<Map size={18} />}
@@ -78,6 +100,17 @@ export function AccountNav() {
       >
         Addresses
       </NavItem>
+      
+      {isAdmin && (
+        <NavItem
+          to={`/${lang}/account/admin`}
+          icon={<ShoppingBag size={18} />}
+          active={isActive("/account/admin")}
+        >
+          Admin
+        </NavItem>
+      )}
+      
       <Button 
         variant="outline" 
         className="w-full justify-start gap-2 text-destructive hover:text-destructive mt-4"
