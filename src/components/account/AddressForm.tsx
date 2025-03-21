@@ -58,7 +58,16 @@ export function AddressForm({ address, onComplete }: AddressFormProps) {
       if (isEditing && address) {
         await updateAddress(address.id, data);
       } else {
-        await addAddress(data);
+        // Ensure all required fields are passed to addAddress
+        const addressData = {
+          street_address: data.street_address,
+          city: data.city,
+          state: data.state,
+          postal_code: data.postal_code,
+          country: data.country,
+          is_default: data.is_default,
+        };
+        await addAddress(addressData);
       }
       onComplete();
     } finally {

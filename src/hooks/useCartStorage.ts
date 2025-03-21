@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
@@ -11,51 +12,54 @@ export const useCartStorage = () => {
   const [cartItems, setCartItems] = useState([]);
   const isAuthenticated = useAuthStatus();
 
-  useEffect(() => {
-    const initializeCart = async () => {
-      if (isAuthenticated) {
-        // Fetch cart items from the database for authenticated users
-        const { data: { user } } = await supabase.auth.getUser();
+  // Function to fetch cart items
+  const fetchCartItems = async () => {
+    if (isAuthenticated) {
+      // Fetch cart items from the database for authenticated users
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data, error } = await supabase
+          .from('cart_items')
+          .select('*')
+          .eq('user_id', user.id);
 
-        if (user) {
-          const { data, error } = await supabase
-            .from('cart_items')
-            .select('*')
-            .eq('user_id', user.id);
-
-          if (error) {
-            console.error('Error fetching cart items:', error);
-            return;
-          }
-
-          setCartItems(data);
-        }
-      } else {
-        // Check if there's an existing cart in localStorage and if it's still valid
-        const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
-        const timestamp = localStorage.getItem(CART_TIMESTAMP_KEY);
-        const now = Date.now();
-
-        if (timestamp) {
-          const timePassed = now - parseInt(timestamp);
-          if (timePassed < STORAGE_TIMEOUT) {
-            setCartItems(storedCart);
-            return;
-          }
+        if (error) {
+          console.error('Error fetching cart items:', error);
+          return;
         }
 
-        // Clear expired cart
-        localStorage.removeItem(CART_KEY);
-        localStorage.removeItem(CART_TIMESTAMP_KEY);
-        setCartItems([]);
+        setCartItems(data);
       }
-    };
+    } else {
+      // Check if there's an existing cart in localStorage and if it's still valid
+      const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+      const timestamp = localStorage.getItem(CART_TIMESTAMP_KEY);
+      const now = Date.now();
 
-    initializeCart();
+      if (timestamp) {
+        const timePassed = now - parseInt(timestamp);
+        if (timePassed < STORAGE_TIMEOUT) {
+          setCartItems(storedCart);
+          return;
+        }
+      }
+
+      // Clear expired cart
+      localStorage.removeItem(CART_KEY);
+      localStorage.removeItem(CART_TIMESTAMP_KEY);
+      setCartItems([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchCartItems();
   }, [isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated) {
+      const { data: { user } } = supabase.auth.getUser();
+      
       const channel = supabase
         .channel('custom-filter-channel')
         .on(
@@ -64,10 +68,10 @@ export const useCartStorage = () => {
             event: '*',
             schema: 'public',
             table: 'cart_items',
-            filter: `user_id=eq.${supabase.auth.user()?.id}`,
+            filter: `user_id=eq.${user?.id}`,
           },
-          (payload) => {
-            initializeCart();
+          () => {
+            fetchCartItems();
           }
         )
         .subscribe();
