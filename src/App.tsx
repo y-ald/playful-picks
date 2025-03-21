@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,8 @@ import Checkout from "./pages/Checkout";
 import About from "./pages/About";
 import Auth from "./pages/Auth";
 import TrackingPage from "./pages/TrackingPage";
+import ProfilePage from "./pages/account/ProfilePage";
+import AddressesPage from "./pages/account/AddressesPage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +43,10 @@ const App = () => (
               <Route path="checkoutsuccess" element={<CheckoutSuccess />} />
               <Route path="auth" element={<Auth />} />
               <Route path="tracking/:trackingNumber" element={<TrackingPage />} />
+              
+              {/* Account Settings Routes */}
+              <Route path="account" element={<ProfilePage />} />
+              <Route path="account/addresses" element={<AddressesPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
