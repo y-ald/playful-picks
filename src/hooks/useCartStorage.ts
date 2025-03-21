@@ -16,7 +16,8 @@ export const useCartStorage = () => {
   const fetchCartItems = async () => {
     if (isAuthenticated) {
       // Fetch cart items from the database for authenticated users
-      const { data: { user } } = await supabase.auth.getUser();
+      const userResponse = await supabase.auth.getUser();
+      const user = userResponse.data.user;
       
       if (user) {
         const { data, error } = await supabase
@@ -58,27 +59,34 @@ export const useCartStorage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      const { data: { user } } = supabase.auth.getUser();
-      
-      const channel = supabase
-        .channel('custom-filter-channel')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'cart_items',
-            filter: `user_id=eq.${user?.id}`,
-          },
-          () => {
-            fetchCartItems();
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
+      const setupSubscription = async () => {
+        const userResponse = await supabase.auth.getUser();
+        const user = userResponse.data.user;
+        
+        if (!user) return;
+        
+        const channel = supabase
+          .channel('custom-filter-channel')
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'cart_items',
+              filter: `user_id=eq.${user.id}`,
+            },
+            () => {
+              fetchCartItems();
+            }
+          )
+          .subscribe();
+  
+        return () => {
+          supabase.removeChannel(channel);
+        };
       };
+      
+      setupSubscription();
     }
   }, [isAuthenticated]);
 
