@@ -15,6 +15,7 @@ export function ImageUploader({ imagePreview, onImageChange }: ImageUploaderProp
     }
   };
 
+  // Using a dashed border container for consistent drop zone appearance
   return (
     <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
       {imagePreview ? (

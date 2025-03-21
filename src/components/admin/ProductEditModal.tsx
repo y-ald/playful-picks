@@ -65,10 +65,10 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: {
-      name: product.name,
+      name: product.name || '',
       description: product.description || '',
-      price: product.price,
-      stock_quantity: product.stock_quantity,
+      price: product.price || 0,
+      stock_quantity: product.stock_quantity || 0,
       category: product.category || '',
       age_range: product.age_range || '',
     },
@@ -77,10 +77,10 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
   // Update form when product changes
   useEffect(() => {
     form.reset({
-      name: product.name,
+      name: product.name || '',
       description: product.description || '',
-      price: product.price,
-      stock_quantity: product.stock_quantity,
+      price: product.price || 0,
+      stock_quantity: product.stock_quantity || 0,
       category: product.category || '',
       age_range: product.age_range || '',
     });

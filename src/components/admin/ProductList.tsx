@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Search, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { ProductEditModal } from './ProductEditModal';
+import { ProductListRow } from './ProductListRow';
 import {
   Table,
   TableBody,
@@ -152,47 +152,12 @@ export function ProductList() {
                 </TableRow>
               ) : (
                 products.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name} 
-                          className="h-12 w-12 object-contain"
-                        />
-                      ) : (
-                        <div className="h-12 w-12 bg-gray-200 flex items-center justify-center text-gray-500 text-xs">
-                          No Image
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{product.name}</div>
-                    </TableCell>
-                    <TableCell>{product.category || '-'}</TableCell>
-                    <TableCell>{product.age_range || '-'}</TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.stock_quantity}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => handleEdit(product)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="text-destructive" 
-                          onClick={() => handleDelete(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                  <ProductListRow 
+                    key={product.id} 
+                    product={product} 
+                    onEdit={handleEdit} 
+                    onDelete={handleDelete}
+                  />
                 ))
               )}
             </TableBody>

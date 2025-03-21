@@ -1,12 +1,13 @@
+
 import { useEffect, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useFavoriteActions } from '@/hooks/useFavoriteActions';
 
 const FAVORITES_ID_KEY = 'anonymous_favorites_id';
 
 export const useFavorites = () => {
   const [clientId, setClientId] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Check if there's an existing client ID
@@ -37,29 +38,7 @@ export const useFavorites = () => {
     enabled: !!clientId,
   });
 
-  const addToFavorites = async (productId: string) => {
-    if (!clientId) return;
-
-    const { error } = await supabase
-      .from('favorites')
-      .insert([{ client_id: clientId, product_id: productId }]);
-
-    if (error) throw error;
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
-  };
-
-  const removeFromFavorites = async (productId: string) => {
-    if (!clientId) return;
-
-    const { error } = await supabase
-      .from('favorites')
-      .delete()
-      .eq('client_id', clientId)
-      .eq('product_id', productId);
-
-    if (error) throw error;
-    queryClient.invalidateQueries({ queryKey: ['favorites'] });
-  };
+  const { addToFavorites, removeFromFavorites } = useFavoriteActions(clientId);
 
   const isFavorite = (productId: string) => {
     return favorites.some(fav => fav.product_id === productId);

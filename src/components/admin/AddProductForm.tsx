@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Loader2, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ImageUploader } from './ImageUploader';
+import { ProductFieldsGrid } from './ProductFieldsGrid';
 import {
   Form,
   FormControl,
