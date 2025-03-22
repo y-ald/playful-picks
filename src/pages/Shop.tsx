@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type Product = {
   id: string;
@@ -13,6 +15,7 @@ type Product = {
   description: string;
   price: number;
   image_url: string | null;
+  additional_images: string[] | null;
   category: string | null;
   age_range: string | null;
   stock_quantity: number;
@@ -22,6 +25,7 @@ const Shop = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<string | null>(null);
+  const { translations } = useLanguage();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', searchQuery, selectedCategory, selectedAgeRange],
@@ -61,14 +65,14 @@ const Shop = () => {
       <Navbar />
       <div className="container mx-auto px-4 pt-24">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Shop</h1>
+          <h1 className="text-4xl font-bold mb-4">{translations?.shop?.title || "Shop"}</h1>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder={translations?.shop?.searchPlaceholder || "Search products..."}
                   className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -81,7 +85,7 @@ const Shop = () => {
                 value={selectedCategory || ''}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
               >
-                <option value="">All Categories</option>
+                <option value="">{translations?.shop?.filters?.allCategories || "All Categories"}</option>
                 {categories.map((category) => (
                   <option key={category} value={category}>
                     {category}
@@ -93,10 +97,10 @@ const Shop = () => {
                 value={selectedAgeRange || ''}
                 onChange={(e) => setSelectedAgeRange(e.target.value || null)}
               >
-                <option value="">All Ages</option>
+                <option value="">{translations?.shop?.filters?.allAges || "All Ages"}</option>
                 {ageRanges.map((range) => (
                   <option key={range} value={range}>
-                    {range} years
+                    {range} {translations?.shop?.filters?.years || "years"}
                   </option>
                 ))}
               </select>

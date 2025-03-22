@@ -1,14 +1,19 @@
+
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import ProductCard from './ProductCard';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 const NewArrivals = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const { language, translations } = useLanguage();
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['newArrivals'],
@@ -24,26 +29,6 @@ const NewArrivals = () => {
     },
   });
 
-  const scroll = (direction: 'left' | 'right') => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const scrollAmount = 300;
-    const targetScroll = container.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
-    
-    container.scrollTo({
-      left: targetScroll,
-      behavior: 'smooth'
-    });
-
-    // Update scroll buttons visibility after animation
-    setTimeout(() => {
-      if (!container) return;
-      setCanScrollLeft(container.scrollLeft > 0);
-      setCanScrollRight(container.scrollLeft < (container.scrollWidth - container.clientWidth));
-    }, 300);
-  };
-
   if (isLoading) {
     return <div className="animate-pulse h-[400px] bg-gray-100 rounded-lg"></div>;
   }
@@ -53,42 +38,37 @@ const NewArrivals = () => {
   }
 
   return (
-    <div className="relative group">
-      {canScrollLeft && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 rounded-full p-2 shadow-lg hover:bg-white transition-colors"
-          onClick={() => scroll('left')}
+    <div className="relative">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">
+          {translations?.home?.newArrivals?.title || "New Arrivals"}
+        </h2>
+        <a 
+          href={`/${language}/shop`} 
+          className="text-primary hover:underline"
         >
-          <ChevronLeft className="w-6 h-6" />
-        </motion.button>
-      )}
-      
-      <div 
-        ref={scrollContainerRef}
-        className="overflow-x-auto scrollbar-hide"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <div className="flex gap-6 pb-4">
-          {products.map((product) => (
-            <div key={product.id} className="min-w-[280px]">
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+          {translations?.home?.newArrivals?.viewAll || "View All"}
+        </a>
       </div>
-
-      {canScrollRight && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 rounded-full p-2 shadow-lg hover:bg-white transition-colors"
-          onClick={() => scroll('right')}
-        >
-          <ChevronRight className="w-6 h-6" />
-        </motion.button>
-      )}
+      
+      <Carousel
+        className="w-full"
+        opts={{
+          align: "start",
+          dragFree: true,
+        }}
+      >
+        <CarouselContent className="-ml-2 md:-ml-4">
+          {products.map((product) => (
+            <CarouselItem 
+              key={product.id} 
+              className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+            >
+              <ProductCard product={product} />
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+      </Carousel>
     </div>
   );
 };

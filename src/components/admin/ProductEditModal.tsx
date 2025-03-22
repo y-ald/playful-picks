@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -41,6 +42,7 @@ type Product = {
   description: string;
   price: number;
   image_url: string | null;
+  additional_images?: string[];
   category: string | null;
   age_range: string | null;
   stock_quantity: number;
@@ -55,8 +57,15 @@ interface ProductEditModalProps {
 
 export function ProductEditModal({ product, isOpen, onClose, onUpdate }: ProductEditModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(product.image_url);
+  const [mainImage, setMainImage] = useState<File | null>(null);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(product.image_url);
+  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>(
+    product.additional_images || []
+  );
+  const [existingAdditionalImages, setExistingAdditionalImages] = useState<string[]>(
+    product.additional_images || []
+  );
   const { toast } = useToast();
   
   const form = useForm<ProductFormValues>({
@@ -80,43 +89,80 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
       category: product.category || '',
       age_range: product.age_range || '',
     });
-    setImagePreview(product.image_url);
+    setMainImagePreview(product.image_url);
+    setExistingAdditionalImages(product.additional_images || []);
+    setAdditionalImagePreviews(product.additional_images || []);
+    setMainImage(null);
+    setAdditionalImages([]);
   }, [product, form]);
 
-  const handleImageChange = (file: File | null) => {
-    setSelectedImage(file);
+  const handleMainImageChange = (file: File | null) => {
+    setMainImage(file);
     if (file) {
-      setImagePreview(URL.createObjectURL(file));
+      setMainImagePreview(URL.createObjectURL(file));
     } else {
-      setImagePreview(null);
+      setMainImagePreview(product.image_url);
     }
+  };
+
+  const handleAdditionalImagesChange = (files: File[]) => {
+    setAdditionalImages(prev => [...prev, ...files]);
+    
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setAdditionalImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveAdditionalImage = (index: number) => {
+    if (index < existingAdditionalImages.length) {
+      // It's an existing image from the database
+      setExistingAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    } else {
+      // It's a newly added image
+      const adjustedIndex = index - existingAdditionalImages.length;
+      setAdditionalImages(prev => prev.filter((_, i) => i !== adjustedIndex));
+    }
+    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImage = async (file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(fileName, file);
+      
+    if (uploadError) {
+      throw uploadError;
+    }
+    
+    const { data: publicURL } = supabase.storage
+      .from('products')
+      .getPublicUrl(fileName);
+      
+    return publicURL.publicUrl;
   };
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
     
     try {
-      let image_url = product.image_url;
+      let mainImageUrl = product.image_url;
+      let additionalImageUrls: string[] = [...existingAdditionalImages];
       
-      if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, selectedImage);
-          
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        const { data: publicURL } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName);
-          
-        image_url = publicURL.publicUrl;
+      // Upload new main image if one is selected
+      if (mainImage) {
+        mainImageUrl = await uploadImage(mainImage);
       }
       
+      // Upload new additional images
+      if (additionalImages.length > 0) {
+        const uploadPromises = additionalImages.map(img => uploadImage(img));
+        const newAdditionalUrls = await Promise.all(uploadPromises);
+        additionalImageUrls = [...additionalImageUrls, ...newAdditionalUrls];
+      }
+      
+      // Update product in the database
       const { data: updatedProduct, error } = await supabase
         .from('products')
         .update({
@@ -126,7 +172,8 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
           stock_quantity: data.stock_quantity,
           category: data.category,
           age_range: data.age_range,
-          image_url: image_url,
+          image_url: mainImageUrl,
+          additional_images: additionalImageUrls,
         })
         .eq('id', product.id)
         .select()
@@ -157,15 +204,18 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <ImageUploader 
-              imagePreview={imagePreview} 
-              onImageChange={handleImageChange} 
+              mainImagePreview={mainImagePreview}
+              additionalImagePreviews={additionalImagePreviews}
+              onMainImageChange={handleMainImageChange}
+              onAdditionalImagesChange={handleAdditionalImagesChange}
+              onRemoveAdditionalImage={handleRemoveAdditionalImage}
             />
 
             <div className="space-y-4">

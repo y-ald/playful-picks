@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -18,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const productSchema = z.object({
   name: z.string().min(3, { message: 'Product name is required' }),
@@ -30,9 +32,12 @@ const productSchema = z.object({
 
 export function AddProductForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mainImage, setMainImage] = useState<File | null>(null);
+  const [mainImagePreview, setMainImagePreview] = useState<string | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<File[]>([]);
+  const [additionalImagePreviews, setAdditionalImagePreviews] = useState<string[]>([]);
   const { toast } = useToast();
+  const { translations } = useLanguage();
   
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -46,45 +51,71 @@ export function AddProductForm() {
     },
   });
 
-  const handleImageChange = (file: File | null) => {
-    setSelectedImage(file);
+  const handleMainImageChange = (file: File | null) => {
+    setMainImage(file);
     if (file) {
-      setImagePreview(URL.createObjectURL(file));
+      setMainImagePreview(URL.createObjectURL(file));
     } else {
-      setImagePreview(null);
+      setMainImagePreview(null);
     }
+  };
+
+  const handleAdditionalImagesChange = (files: File[]) => {
+    setAdditionalImages(prev => [...prev, ...files]);
+    
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setAdditionalImagePreviews(prev => [...prev, ...newPreviews]);
+  };
+
+  const handleRemoveAdditionalImage = (index: number) => {
+    setAdditionalImages(prev => prev.filter((_, i) => i !== index));
+    setAdditionalImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadImage = async (file: File, bucket: string) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+    
+    // Check if products bucket exists, create it if not
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(b => b.name === bucket)) {
+      await supabase.storage.createBucket(bucket, { public: true });
+    }
+    
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file);
+      
+    if (uploadError) {
+      throw uploadError;
+    }
+    
+    const { data: publicURL } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+      
+    return publicURL.publicUrl;
   };
 
   const onSubmit = async (data: ProductFormValues) => {
     setIsSubmitting(true);
     
     try {
-      let image_url = null;
+      let mainImageUrl = null;
+      let additionalImageUrls: string[] = [];
       
-      if (selectedImage) {
-        const fileExt = selectedImage.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        
-        const { data: buckets } = await supabase.storage.listBuckets();
-        if (!buckets?.find(bucket => bucket.name === 'products')) {
-          await supabase.storage.createBucket('products', { public: true });
-        }
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('products')
-          .upload(fileName, selectedImage);
-          
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        const { data: publicURL } = supabase.storage
-          .from('products')
-          .getPublicUrl(fileName);
-          
-        image_url = publicURL.publicUrl;
+      // Upload main image
+      if (mainImage) {
+        mainImageUrl = await uploadImage(mainImage, 'products');
       }
       
+      // Upload additional images
+      if (additionalImages.length > 0) {
+        const uploadPromises = additionalImages.map(img => uploadImage(img, 'products'));
+        additionalImageUrls = await Promise.all(uploadPromises);
+      }
+      
+      // Insert product into the database with proper types
       const { data: product, error } = await supabase
         .from('products')
         .insert({
@@ -94,7 +125,8 @@ export function AddProductForm() {
           stock_quantity: data.stock_quantity,
           category: data.category,
           age_range: data.age_range,
-          image_url: image_url,
+          image_url: mainImageUrl,
+          additional_images: additionalImageUrls,
         })
         .select()
         .single();
@@ -108,9 +140,12 @@ export function AddProductForm() {
         description: `${data.name} has been added to inventory`,
       });
       
+      // Reset form and image previews
       form.reset();
-      setSelectedImage(null);
-      setImagePreview(null);
+      setMainImage(null);
+      setMainImagePreview(null);
+      setAdditionalImages([]);
+      setAdditionalImagePreviews([]);
       
     } catch (error) {
       console.error('Error adding product:', error);
@@ -128,8 +163,11 @@ export function AddProductForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <ImageUploader 
-          imagePreview={imagePreview} 
-          onImageChange={handleImageChange} 
+          mainImagePreview={mainImagePreview}
+          additionalImagePreviews={additionalImagePreviews}
+          onMainImageChange={handleMainImageChange}
+          onAdditionalImagesChange={handleAdditionalImagesChange}
+          onRemoveAdditionalImage={handleRemoveAdditionalImage}
         />
 
         <div className="space-y-4">

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Heart, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -6,10 +7,16 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import Navbar from '@/components/Navbar';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { useFavoritesStorage } from '@/hooks/useFavoritesStorage';
+import { useCart } from '@/hooks/useCart';
 
 const ProductDetails = () => {
   const { id } = useParams();
   const { toast } = useToast();
+  const { language, translations } = useLanguage();
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavoritesStorage();
+  const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: product, isLoading } = useQuery({
@@ -26,11 +33,16 @@ const ProductDetails = () => {
     },
   });
 
-  // Mock multiple images (in production, this would come from the product data)
+  // Prepare all product images
   const images = product ? [
     product.image_url,
-    '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png',
+    ...(product.additional_images || [])
   ].filter(Boolean) as string[] : [];
+
+  // Reset current image index when product changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [id]);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -40,7 +52,7 @@ const ProductDetails = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const addToCart = async () => {
+  const addToCartHandler = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -52,13 +64,7 @@ const ProductDetails = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from('cart_items')
-        .insert([
-          { user_id: user.id, product_id: id, quantity: 1 }
-        ]);
-
-      if (error) throw error;
+      await addToCart(id as string);
 
       toast({
         title: "Success",
@@ -74,7 +80,7 @@ const ProductDetails = () => {
     }
   };
 
-  const addToFavorites = async () => {
+  const addToFavoritesHandler = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -86,23 +92,24 @@ const ProductDetails = () => {
         return;
       }
 
-      const { error } = await supabase
-        .from('favorites')
-        .insert([
-          { user_id: user.id, product_id: id }
-        ]);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Added to favorites"
-      });
+      if (isFavorite(id as string)) {
+        await removeFromFavorites(id as string);
+        toast({
+          title: "Success",
+          description: "Removed from favorites"
+        });
+      } else {
+        await addToFavorites(id as string);
+        toast({
+          title: "Success",
+          description: "Added to favorites"
+        });
+      }
     } catch (error) {
-      console.error('Error adding to favorites:', error);
+      console.error('Error updating favorites:', error);
       toast({
         title: "Error",
-        description: "Failed to add to favorites",
+        description: "Failed to update favorites",
         variant: "destructive"
       });
     }
@@ -173,12 +180,12 @@ const ProductDetails = () => {
             )}
             <p className="text-gray-700">{product.description}</p>
             <div className="flex gap-4">
-              <Button onClick={addToCart} className="flex-1">
+              <Button onClick={addToCartHandler} className="flex-1">
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                Add to Cart
+                {translations?.shop?.addToCart || "Add to Cart"}
               </Button>
-              <Button variant="outline" onClick={addToFavorites}>
-                <Heart className="h-4 w-4" />
+              <Button variant="outline" onClick={addToFavoritesHandler}>
+                <Heart className={`h-4 w-4 ${isFavorite(id as string) ? 'fill-red-500 text-red-500' : ''}`} />
               </Button>
             </div>
           </div>

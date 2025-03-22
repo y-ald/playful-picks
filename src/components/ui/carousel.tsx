@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -17,6 +18,10 @@ type CarouselProps = {
   plugins?: CarouselPlugin
   orientation?: "horizontal" | "vertical"
   setApi?: (api: CarouselApi) => void
+  selectedIndex?: number
+  children?: React.ReactNode
+  className?: string
+  builtinNavigation?: boolean
 }
 
 type CarouselContextProps = {
@@ -26,6 +31,7 @@ type CarouselContextProps = {
   scrollNext: () => void
   canScrollPrev: boolean
   canScrollNext: boolean
+  selectedIndex: number
 } & CarouselProps
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null)
@@ -52,6 +58,8 @@ const Carousel = React.forwardRef<
       plugins,
       className,
       children,
+      selectedIndex = 0,
+      builtinNavigation = true,
       ...props
     },
     ref
@@ -65,6 +73,13 @@ const Carousel = React.forwardRef<
     )
     const [canScrollPrev, setCanScrollPrev] = React.useState(false)
     const [canScrollNext, setCanScrollNext] = React.useState(false)
+
+    // Handle external control of the selected index
+    React.useEffect(() => {
+      if (api && typeof selectedIndex === 'number') {
+        api.scrollTo(selectedIndex);
+      }
+    }, [api, selectedIndex]);
 
     const onSelect = React.useCallback((api: CarouselApi) => {
       if (!api) {
@@ -130,6 +145,7 @@ const Carousel = React.forwardRef<
           scrollNext,
           canScrollPrev,
           canScrollNext,
+          selectedIndex
         }}
       >
         <div
@@ -141,6 +157,33 @@ const Carousel = React.forwardRef<
           {...props}
         >
           {children}
+
+          {builtinNavigation && (
+            <>
+              {canScrollPrev && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                  onClick={scrollPrev}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="sr-only">Previous slide</span>
+                </Button>
+              )}
+              {canScrollNext && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                  onClick={scrollNext}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  <span className="sr-only">Next slide</span>
+                </Button>
+              )}
+            </>
+          )}
         </div>
       </CarouselContext.Provider>
     )
@@ -204,7 +247,7 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute  h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full",
         orientation === "horizontal"
           ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
