@@ -66,11 +66,9 @@ export default function AdminPage() {
 
   if (loading) {
     return (
-      <AccountLayout>
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </AccountLayout>
     );
   }
 
@@ -79,7 +77,6 @@ export default function AdminPage() {
   }
 
   return (
-    <AccountLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
         <Tabs defaultValue="add-product">
@@ -99,6 +96,5 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </AccountLayout>
   );
 }

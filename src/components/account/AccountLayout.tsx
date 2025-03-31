@@ -14,7 +14,6 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const isAuthenticated = useAuthStatus();
   const location = useLocation();
   const { lang } = useParams<{ lang: string }>();
-  
   // While checking auth status, show loading
   if (isAuthenticated === null) {
     return (

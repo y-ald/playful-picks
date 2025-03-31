@@ -98,7 +98,7 @@ export function AccountNav() {
         icon={<Map size={18} />}
         active={isActive("/account/addresses")}
       >
-        Addresses
+        Addressese
       </NavItem>
       
       {isAdmin && (

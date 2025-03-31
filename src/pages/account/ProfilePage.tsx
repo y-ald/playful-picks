@@ -23,7 +23,6 @@ export default function ProfilePage() {
   }, []);
 
   return (
-    <AccountLayout>
       <div className="space-y-6">
         <Card>
           <CardHeader>
@@ -49,6 +48,5 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
-    </AccountLayout>
   );
 }

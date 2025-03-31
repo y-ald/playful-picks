@@ -9,7 +9,6 @@ export default function AddressesPage() {
   const { loading } = useProfile();
 
   return (
-    <AccountLayout>
       <Card>
         <CardHeader>
           <CardTitle>Manage Addresses</CardTitle>
@@ -24,6 +23,5 @@ export default function AddressesPage() {
           )}
         </CardContent>
       </Card>
-    </AccountLayout>
   );
 }
