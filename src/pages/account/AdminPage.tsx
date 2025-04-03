@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AccountLayout } from "@/components/account/AccountLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -8,13 +8,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { AddProductForm } from '@/components/admin/AddProductForm';
 import { ProductList } from '@/components/admin/ProductList';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useParams } from 'react-router-dom';
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { lang } = useParams<{ lang: string }>();
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -78,7 +81,15 @@ export default function AdminPage() {
 
   return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+          <Link to={`/${lang}`}>
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+          </Link>
+        </div>
         <Tabs defaultValue="add-product">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="add-product">Add New Product</TabsTrigger>

@@ -180,6 +180,7 @@ export type Database = {
           image_url: string | null
           name: string
           price: number
+          promotion_price: number | null
           stock_quantity: number | null
           updated_at: string
         }
@@ -193,6 +194,7 @@ export type Database = {
           image_url?: string | null
           name: string
           price: number
+          promotion_price?: number | null
           stock_quantity?: number | null
           updated_at?: string
         }
@@ -206,6 +208,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           price?: number
+          promotion_price?: number | null
           stock_quantity?: number | null
           updated_at?: string
         }
