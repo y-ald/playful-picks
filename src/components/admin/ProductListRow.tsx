@@ -8,6 +8,7 @@ type Product = {
   name: string;
   description: string;
   price: number;
+  promotion_price?: number | null;
   image_url: string | null;
   category: string | null;
   age_range: string | null;
@@ -41,7 +42,16 @@ export function ProductListRow({ product, onEdit, onDelete }: ProductListRowProp
       </TableCell>
       <TableCell>{product.category || '-'}</TableCell>
       <TableCell>{product.age_range || '-'}</TableCell>
-      <TableCell>${product.price.toFixed(2)}</TableCell>
+      <TableCell>
+        {product.promotion_price ? (
+          <div>
+            <span className="line-through text-gray-500">${product.price.toFixed(2)}</span>
+            <span className="ml-2 text-red-500 font-semibold">${product.promotion_price.toFixed(2)}</span>
+          </div>
+        ) : (
+          <span>${product.price.toFixed(2)}</span>
+        )}
+      </TableCell>
       <TableCell>{product.stock_quantity}</TableCell>
       <TableCell>
         <div className="flex space-x-2">

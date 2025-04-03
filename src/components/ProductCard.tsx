@@ -17,6 +17,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  promotion_price?: number | null;
   image_url: string | null;
   additional_images?: string[];
   description: string | null;
@@ -140,9 +141,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <h3 className="text-lg font-semibold text-gray-800 mb-2 line-clamp-2 h-14">
           {product.name}
         </h3>
-        <p className="text-primary font-bold mb-4">
-          ${product.price.toFixed(2)}
-        </p>
+        <div className="mb-4">
+          {product.promotion_price ? (
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 line-through">${product.price.toFixed(2)}</span>
+              <span className="text-[#ea384c] font-bold">${product.promotion_price.toFixed(2)}</span>
+            </div>
+          ) : (
+            <p className="text-primary font-bold">
+              ${product.price.toFixed(2)}
+            </p>
+          )}
+        </div>
       </Link>
       <Button 
         onClick={handleAddToCart}

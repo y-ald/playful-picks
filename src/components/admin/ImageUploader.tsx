@@ -42,6 +42,9 @@ export function ImageUploader({
               alt="Main product preview" 
               className="mx-auto max-h-48 object-contain" 
             />
+            <div className="mt-2 text-xs text-gray-500">
+              Images will be automatically resized to optimize loading performance
+            </div>
             <Button
               type="button"
               variant="outline"
@@ -58,6 +61,9 @@ export function ImageUploader({
             <p className="text-sm text-gray-500 mb-2">
               Click to upload or drag and drop
             </p>
+            <div className="mt-1 text-xs text-gray-500 mb-3">
+              Images will be automatically resized to optimize loading performance
+            </div>
             <Input
               id="main-product-image"
               type="file"

@@ -25,6 +25,7 @@ const productSchema = z.object({
   name: z.string().min(3, { message: 'Product name is required' }),
   description: z.string().min(10, { message: 'Description must be at least 10 characters' }),
   price: z.coerce.number().positive({ message: 'Price must be a positive number' }),
+  promotion_price: z.coerce.number().positive({ message: 'Promotion price must be a positive number' }).nullable().optional(),
   stock_quantity: z.coerce.number().int().nonnegative({ message: 'Quantity must be a non-negative integer' }),
   category: z.string().min(1, { message: 'Category is required' }),
   age_range: z.string().min(1, { message: 'Age range is required' }),
@@ -45,6 +46,7 @@ export function AddProductForm() {
       name: '',
       description: '',
       price: 0,
+      promotion_price: null,
       stock_quantity: 0,
       category: '',
       age_range: '',
@@ -76,6 +78,12 @@ export function AddProductForm() {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     
+    // Resize image before upload
+    const resizedImageBlob = await resizeImage(file);
+    const resizedImageFile = new File([resizedImageBlob], fileName, {
+      type: file.type,
+    });
+    
     // Check if products bucket exists, create it if not
     const { data: buckets } = await supabase.storage.listBuckets();
     if (!buckets?.find(b => b.name === bucket)) {
@@ -84,7 +92,7 @@ export function AddProductForm() {
     
     const { error: uploadError } = await supabase.storage
       .from(bucket)
-      .upload(fileName, file);
+      .upload(fileName, resizedImageFile);
       
     if (uploadError) {
       throw uploadError;
@@ -95,6 +103,58 @@ export function AddProductForm() {
       .getPublicUrl(fileName);
       
     return publicURL.publicUrl;
+  };
+
+  // Image resizing function
+  const resizeImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+        
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Canvas to Blob conversion failed'));
+          }
+        }, file.type);
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Image loading error'));
+      };
+    });
   };
 
   const onSubmit = async (data: ProductFormValues) => {
@@ -122,6 +182,7 @@ export function AddProductForm() {
           name: data.name,
           description: data.description,
           price: data.price,
+          promotion_price: data.promotion_price,
           stock_quantity: data.stock_quantity,
           category: data.category,
           age_range: data.age_range,
