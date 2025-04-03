@@ -1,27 +1,44 @@
 
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "./contexts/LanguageContext";
-import Index from "./pages/Index";
-import Shop from "./pages/Shop";
-import ProductDetails from "./pages/ProductDetails";
-import Favorites from "./pages/Favorites";
-import Contact from "./pages/Contact";
-import NotFound from "./pages/NotFound";
-import CheckoutSuccess from "./pages/CheckoutSuccess";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import About from "./pages/About";
-import Auth from "./pages/Auth";
-import TrackingPage from "./pages/TrackingPage";
-import ProfilePage from "./pages/account/ProfilePage";
-import AddressesPage from "./pages/account/AddressesPage";
-import AdminPage from "./pages/account/AdminPage";
+import { lazyLoad } from "./utils/lazyLoad";
+import { Loader2 } from "lucide-react";
 
-const queryClient = new QueryClient();
+// Lazy load pages to improve initial loading time
+const Index = lazyLoad(() => import("./pages/Index"));
+const Shop = lazyLoad(() => import("./pages/Shop"));
+const ProductDetails = lazyLoad(() => import("./pages/ProductDetails"));
+const Favorites = lazyLoad(() => import("./pages/Favorites"));
+const Contact = lazyLoad(() => import("./pages/Contact"));
+const NotFound = lazyLoad(() => import("./pages/NotFound"));
+const CheckoutSuccess = lazyLoad(() => import("./pages/CheckoutSuccess"));
+const Cart = lazyLoad(() => import("./pages/Cart"));
+const Checkout = lazyLoad(() => import("./pages/Checkout"));
+const About = lazyLoad(() => import("./pages/About"));
+const Auth = lazyLoad(() => import("./pages/Auth"));
+const TrackingPage = lazyLoad(() => import("./pages/TrackingPage"));
+
+// Lazy load account pages separately
+const ProfilePage = lazyLoad(() => import("./pages/account/ProfilePage"));
+const AddressesPage = lazyLoad(() => import("./pages/account/AddressesPage"));
+const AdminPage = lazyLoad(() => import("./pages/account/AdminPage"));
+
+// Create a new query client with optimized settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
