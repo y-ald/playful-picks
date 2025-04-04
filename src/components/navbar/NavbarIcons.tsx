@@ -1,11 +1,9 @@
 
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Heart, ShoppingCart, Search, LogIn, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuthStatus } from '@/hooks/useAuthStatus';
-import { useCartStorage } from '@/hooks/useCartStorage';
+import { useNavigation } from '@/contexts/NavigationContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,46 +12,50 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export const NavbarIcons = () => {
-  const clientId = localStorage.getItem('anonymous_favorites_id');
   const { language, translations, setLanguage } = useLanguage();
-  const location = useLocation();
   const isAuthenticated = useAuthStatus();
-  const { cartItems } = useCartStorage();
+  const { cartCount, favoritesCount } = useNavigation();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const toggleLanguage = () => {
-    setLanguage(language === 'en' ? 'fr' : 'en');
-  };
-
-  const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (isAuthenticated) {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', user.id)
-            .single();
-            
-          setIsAdmin(!!data?.is_admin);
-        }
+  // Only check admin status when authenticated - memoized to avoid repeated checks
+  const checkAdminStatus = useMemo(() => async () => {
+    if (isAuthenticated) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        return !!data?.is_admin;
       }
-    };
-    
-    checkAdminStatus();
+    }
+    return false;
   }, [isAuthenticated]);
+
+  // Only run the admin check once when auth status changes
+  useEffect(() => {
+    let isMounted = true;
+    
+    checkAdminStatus().then(status => {
+      if (isMounted) {
+        setIsAdmin(status);
+      }
+    });
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [checkAdminStatus]);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -74,20 +76,6 @@ export const NavbarIcons = () => {
     
     navigate(`/${language}`);
   };
-
-  const { data: favoritesCount = 0 } = useQuery({
-    queryKey: ['favoritesCount', clientId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('favorites')
-        .select('*', { count: 'exact' })
-        .eq('client_id', clientId || '');
-      
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!clientId
-  });
 
   return (
     <div className="flex items-center space-x-4">

@@ -1,13 +1,16 @@
 
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, lazy, Suspense } from 'react';
+import { useOptimizedQuery } from '@/hooks/useOptimizedQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Navbar from '@/components/Navbar';
-import ProductCard from '@/components/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+
+// Lazy load components
+const ProductCard = lazy(() => import('@/components/ProductCard'));
+const OptimizedProductCard = lazy(() => import('@/components/OptimizedProductCard'));
 
 type Product = {
   id: string;
@@ -28,9 +31,9 @@ const Shop = () => {
   const [selectedAgeRange, setSelectedAgeRange] = useState<string | null>(null);
   const { translations } = useLanguage();
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ['products', searchQuery, selectedCategory, selectedAgeRange],
-    queryFn: async () => {
+  const { data: products, isLoading } = useOptimizedQuery(
+    ['products', searchQuery, selectedCategory, selectedAgeRange],
+    async () => {
       let query = supabase
         .from('products')
         .select('*');
@@ -56,10 +59,13 @@ const Shop = () => {
 
       return data as Product[];
     },
-  });
+  );
 
   const categories = ['Educational', 'Books', 'Science', 'Baby Toys', 'Arts & Crafts'];
   const ageRanges = ['0-2', '3-5', '6-8', '9-12'];
+
+  // Use intersection observer for product loading
+  const ProductCardComponent = window.IntersectionObserver ? OptimizedProductCard : ProductCard;
 
   return (
     <div className="min-h-screen bg-white">
@@ -116,7 +122,14 @@ const Shop = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products?.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <Suspense 
+                key={product.id} 
+                fallback={
+                  <div className="animate-pulse bg-gray-200 rounded-lg aspect-square"></div>
+                }
+              >
+                <ProductCardComponent product={product} />
+              </Suspense>
             ))}
           </div>
         )}

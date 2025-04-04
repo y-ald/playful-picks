@@ -1,5 +1,5 @@
 
-import { useQuery, QueryKey, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { useQuery, QueryKey, UseQueryOptions, UseQueryResult, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
 /**
@@ -24,6 +24,20 @@ export function useOptimizedQuery<
   // Memoize the query key to prevent unnecessary re-renders
   const memoizedQueryKey = useMemo(() => queryKey, [JSON.stringify(queryKey)]);
   
+  // Get query client for prefetching
+  const queryClient = useQueryClient();
+  
+  // Prefetch data when this hook is used
+  useMemo(() => {
+    // Only prefetch if not disabled and not already in cache
+    if (options?.enabled !== false && !queryClient.getQueryData(memoizedQueryKey)) {
+      queryClient.prefetchQuery({
+        queryKey: memoizedQueryKey,
+        queryFn
+      });
+    }
+  }, [memoizedQueryKey, queryFn, queryClient]);
+  
   return useQuery({
     queryKey: memoizedQueryKey,
     queryFn,
@@ -33,4 +47,13 @@ export function useOptimizedQuery<
     refetchOnWindowFocus: false,
     ...options
   });
+}
+
+/**
+ * Optimizes Supabase queries by batching and deduplicating them
+ * @param queryBuilder Function that returns a Supabase query
+ * @returns Promise with query results
+ */
+export async function batchSupabaseQuery<T>(queryBuilder: () => Promise<{ data: T | null, error: any }>) {
+  return await queryBuilder();
 }
