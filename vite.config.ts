@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { splitVendorChunkPlugin } from 'vite';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -13,8 +14,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
+    splitVendorChunkPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -28,6 +29,12 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
     // Optimize CSS
     cssCodeSplit: true,
+    // Use modulepreload polyfill
+    modulePreload: {
+      polyfill: true,
+    },
+    // Improve SSR build
+    target: 'esnext',
     // Optimize dependencies
     rollupOptions: {
       output: {
@@ -38,7 +45,22 @@ export default defineConfig(({ mode }) => ({
           'data-vendor': ['@tanstack/react-query', '@supabase/supabase-js']
         }
       }
-    }
+    },
+    // Minify options
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: mode === 'production',
+        drop_debugger: mode === 'production',
+      },
+    },
+  },
+  // Server-side rendering options
+  ssr: {
+    // Add necessary optimizations for SSR
+    noExternal: ['react-router-dom', '@supabase/supabase-js'],
+    // Include CSS for SSR
+    format: 'cjs',
   },
   // Optimize dependency pre-bundling
   optimizeDeps: {
@@ -50,6 +72,10 @@ export default defineConfig(({ mode }) => ({
       '@supabase/supabase-js',
       'framer-motion',
       'lucide-react'
-    ]
+    ],
+    // Exclude problematic packages
+    exclude: [],
+    // Force the optimizer to also process listed dependencies
+    force: true,
   }
 }));
