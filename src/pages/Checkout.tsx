@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,7 @@ import { calculateParcelSize } from "@/lib/calculateParcelSize";
 import ShippingForm from "@/components/ShippingForm";
 import ShippingOptions from "@/components/ShippingOptions";
 import OrderSummary from "@/components/OrderSummary";
+import { ArrowLeft } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -152,12 +154,16 @@ export default function Checkout() {
     }
   };
 
+  const handleReturnToShop = () => {
+    navigate(`/${language}/shop`);
+  };
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">No items in cart</h2>
-          <Button onClick={() => navigate('/shop')}>Continue Shopping</Button>
+          <Button onClick={() => navigate(`/${language}/shop`)}>Continue Shopping</Button>
         </div>
       </div>
     );
@@ -167,7 +173,18 @@ export default function Checkout() {
     <div className="min-h-screen container mx-auto p-4">
       <Navbar />
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold mb-8 text-center">Checkout</h1>
+        <div className="flex items-center mb-8">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mr-4"
+            onClick={handleReturnToShop}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {translations.cart.continueShopping || "Return to Shop"}
+          </Button>
+          <h1 className="text-4xl font-bold text-center">Checkout</h1>
+        </div>
 
         <div className="grid gap-8 md:grid-cols-[1fr,400px]">
           <Card className="p-8">

@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -7,7 +8,7 @@ import { useCartStorage } from "@/hooks/useCartStorage"
 import { useCart } from "@/hooks/useCart"
 import { useLanguage } from "@/contexts/LanguageContext"
 import { supabase } from "@/integrations/supabase/client"
-
+import { ArrowLeft } from "lucide-react"
 
 interface CartItem {
   id: string
@@ -86,6 +87,10 @@ export default function Cart() {
     })
   }
 
+  const handleReturnToShop = () => {
+    navigate(`/${language}/shop`);
+  }
+
   if (loading) {
     return <div className="container mx-auto p-4">Loading cart...</div>
   }
@@ -101,7 +106,18 @@ export default function Cart() {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
+      <div className="flex items-center mb-6">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mr-4"
+          onClick={handleReturnToShop}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {translations.cart.continueShopping || "Return to Shop"}
+        </Button>
+        <h1 className="text-3xl font-bold">Shopping Cart</h1>
+      </div>
       
       <div className="grid gap-4 md:grid-cols-[1fr,300px]">
         <div className="space-y-4">
