@@ -12,6 +12,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { AspectRatio } from './ui/aspect-ratio';
 
 interface Product {
   id: string;
@@ -105,28 +106,36 @@ const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <div className="group">
       <Link to={`/${language}/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100 mb-4">
-          {images.length > 1 ? (
-            <Carousel className="w-full h-full" selectedIndex={currentSlide}>
-              <CarouselContent className="h-full">
-                {images.map((src, index) => (
-                  <CarouselItem key={index} className="h-full">
-                    <img
-                      src={src}
-                      alt={`${product.name} - image ${index + 1}`}
-                      className="h-full w-full object-cover object-center"
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          ) : (
-            <img
-              src={product.image_url || '/placeholder.svg'}
-              alt={product.name}
-              className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
-            />
-          )}
+        <div className="relative overflow-hidden rounded-lg bg-gray-100 mb-4">
+          <AspectRatio ratio={1/1}>
+            {images.length > 1 ? (
+              <Carousel className="w-full h-full" selectedIndex={currentSlide}>
+                <CarouselContent className="h-full">
+                  {images.map((src, index) => (
+                    <CarouselItem key={index} className="h-full">
+                      <div className="h-full w-full flex items-center justify-center">
+                        <img
+                          src={src}
+                          alt={`${product.name} - image ${index + 1}`}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <img
+                  src={product.image_url || '/placeholder.svg'}
+                  alt={product.name}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+            )}
+          </AspectRatio>
           <button
             onClick={handleFavoriteClick}
             className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
