@@ -72,6 +72,7 @@ export default defineConfig(({ mode }) => ({
         drop_debugger: mode === 'production',
       },
     },
+    terserPath: require.resolve('terser'),
   },
   // Optimize dependency pre-bundling
   optimizeDeps: {
