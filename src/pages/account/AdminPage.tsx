@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { AccountLayout } from "@/components/account/AccountLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { supabase } from '@/integrations/supabase/client';
