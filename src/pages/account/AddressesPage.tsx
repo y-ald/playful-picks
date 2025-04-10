@@ -12,21 +12,9 @@ export default function AddressesPage() {
   const { lang } = useParams<{ lang: string }>();
 
   return (
-      <Link to={`/${lang}`}>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Home className="h-4 w-4" />
-          Home
-        </Button>
-      </Link>
       <Card>
         <CardHeader>
           <CardTitle>Manage Addresses</CardTitle>``
-          <Link to={`/${lang}`}>
-            <Button variant="outline" size="sm" className="flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-          </Link>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -37,6 +25,12 @@ export default function AddressesPage() {
             <AddressList />
           )}
         </CardContent>
+        <Link to={`/${lang}`}>
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <Home className="h-4 w-4" />
+              Home
+          </Button>
+        </Link>
       </Card>
   );
 }
