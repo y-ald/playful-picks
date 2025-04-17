@@ -87,6 +87,31 @@ export default function Cart() {
     })
   }
 
+  // modification du panier
+  const handleIncreaseQuantity = (itemId: string) => {
+    const updatedCart = cartItems.map((item) =>
+      item.id === itemId ? { ...item, quantity: item.quantity + 1 } : item
+    );
+    setCartItems(updatedCart);
+    updateQuantity(itemId, updatedCart.find((item) => item.id === itemId)?.quantity || 1);
+  };
+  
+  const handleDecreaseQuantity = (itemId: string) => {
+    const updatedCart = cartItems.map((item) =>
+      item.id === itemId && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 }
+        : item
+    );
+    setCartItems(updatedCart); 
+    updateQuantity(itemId, updatedCart.find((item) => item.id === itemId)?.quantity || 1);
+  };
+  
+  const handleRemoveItem = (itemId: string) => {
+    const updatedCart = cartItems.filter((item) => item.id !== itemId);
+    setCartItems(updatedCart); 
+    removeItem(itemId);
+  };
+
   const handleReturnToShop = () => {
     navigate(`/${language}/shop`);
   }
@@ -141,7 +166,7 @@ export default function Cart() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => handleIncreaseQuantity(item.id)}
                       >
                         -
                       </Button>
@@ -149,7 +174,7 @@ export default function Cart() {
                       <Button
                         variant="outline"
                         size="icon"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => handleDecreaseQuantity(item.id)}
                       >
                         +
                       </Button>
