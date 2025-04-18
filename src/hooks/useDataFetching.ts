@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useMemo } from "react";
 import {
   useQueryClient,
   QueryKey,
@@ -33,6 +33,21 @@ const batchQueue: Map<TableName, BatchRequest[]> = new Map();
 const batchTimeouts: Map<TableName, NodeJS.Timeout> = new Map();
 const BATCH_DELAY = 50; // ms to wait before processing batch
 
+// Cache for in-flight requests to prevent duplicate requests
+const inFlightRequests = new Map<string, Promise<any>>();
+
+/**
+ * Generates a cache key for a request
+ * @param table The table name
+ * @param query The query object
+ * @returns A string key
+ */
+function generateRequestKey(table: TableName, query: any): string {
+  // Create a simplified representation of the query for the key
+  const queryStr = JSON.stringify(query);
+  return `${table}:${queryStr}`;
+}
+
 /**
  * Processes a batch of similar requests to the same table
  * @param table The Supabase table name
@@ -42,19 +57,57 @@ async function processBatch(table: TableName, requests: BatchRequest[]) {
   if (requests.length === 0) return;
 
   try {
-    // Process each request individually for now
-    // This is a simplified implementation that avoids TypeScript errors
-    // while still providing the batching timing benefits
-    for (const request of requests) {
+    // Group similar requests to reduce database load
+    const requestGroups = new Map<string, BatchRequest[]>();
+
+    // Group requests by their query signature
+    requests.forEach((request) => {
+      const key = generateRequestKey(table, request.query);
+      if (!requestGroups.has(key)) {
+        requestGroups.set(key, []);
+      }
+      requestGroups.get(key)!.push(request);
+    });
+
+    // Process each group of similar requests
+    for (const [key, groupRequests] of requestGroups.entries()) {
+      // Check if there's already an in-flight request for this query
+      if (inFlightRequests.has(key)) {
+        const result = await inFlightRequests.get(key);
+        // Resolve all requests in this group with the cached result
+        groupRequests.forEach((request) => {
+          if (result.error) {
+            request.reject(result.error);
+          } else {
+            request.resolve(result.data);
+          }
+        });
+        continue;
+      }
+
+      // Create a new request and cache it
+      const firstRequest = groupRequests[0];
+      const promise = firstRequest.query;
+      inFlightRequests.set(key, promise);
+
       try {
-        const response = await request.query;
-        if (response.error) {
-          request.reject(response.error);
-        } else {
-          request.resolve(response.data);
-        }
+        const response = await promise;
+        // Remove from in-flight cache after completion
+        inFlightRequests.delete(key);
+
+        // Resolve all requests in this group
+        groupRequests.forEach((request) => {
+          if (response.error) {
+            request.reject(response.error);
+          } else {
+            request.resolve(response.data);
+          }
+        });
       } catch (error) {
-        request.reject(error);
+        // Remove from in-flight cache on error
+        inFlightRequests.delete(key);
+        // Reject all requests in this group
+        groupRequests.forEach((request) => request.reject(error));
       }
     }
   } catch (error) {
@@ -123,24 +176,38 @@ export function useSupabaseQuery<TData = any>(
 ) {
   const queryClient = useQueryClient();
   const queryFnRef = useRef(queryFn);
+  const stableQueryKey = useMemo(() => queryKey, [JSON.stringify(queryKey)]);
 
   // Update the ref when queryFn changes
   useEffect(() => {
     queryFnRef.current = queryFn;
   }, [queryFn]);
 
-  // Prefetch data when this hook is used
+  // Prefetch data when this hook is used, but only if not disabled
   useEffect(() => {
     if (options?.enabled !== false) {
-      queryClient.prefetchQuery({
-        queryKey,
-        queryFn: async () => {
-          const query = queryFnRef.current();
-          return await batchRequest(table, query);
-        },
-      });
+      // Use a short timeout to allow multiple components to mount
+      // before triggering prefetch, improving batching opportunities
+      const timeoutId = setTimeout(() => {
+        queryClient.prefetchQuery({
+          queryKey: stableQueryKey,
+          queryFn: async () => {
+            const query = queryFnRef.current();
+            return await batchRequest(table, query);
+          },
+          staleTime: options?.staleTime || 1000 * 60 * 5, // 5 minutes default
+        });
+      }, 10);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [queryKey, table, queryClient, options?.enabled]);
+  }, [
+    stableQueryKey,
+    table,
+    queryClient,
+    options?.enabled,
+    options?.staleTime,
+  ]);
 
   // Wrapped query function that uses batching
   const batchedQueryFn = useCallback(async () => {
@@ -149,7 +216,7 @@ export function useSupabaseQuery<TData = any>(
   }, [table]);
 
   return useQuery<TData, Error, TData, QueryKey>({
-    queryKey,
+    queryKey: stableQueryKey,
     queryFn: batchedQueryFn,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
@@ -192,11 +259,14 @@ export function useProductsData(
     "queryKey" | "queryFn"
   >
 ) {
+  // Skip the query if no product IDs are provided
+  const enabled = productIds.length > 0 && options?.enabled !== false;
+
   return useSupabaseQuery(
     ["products", productIds],
     "products",
     () => supabase.from("products").select("*").in("id", productIds),
-    options
+    { ...options, enabled }
   );
 }
 
@@ -213,11 +283,14 @@ export function useProductsByCategory(
     "queryKey" | "queryFn"
   >
 ) {
+  // Skip the query if no category is provided
+  const enabled = !!category && options?.enabled !== false;
+
   return useSupabaseQuery(
     ["products", "category", category],
     "products",
     () => supabase.from("products").select("*").eq("category", category),
-    options
+    { ...options, enabled }
   );
 }
 
@@ -234,6 +307,9 @@ export function useCartItemsWithProducts(
     "queryKey" | "queryFn"
   >
 ) {
+  // Skip the query if no user ID is provided
+  const enabled = !!userId && options?.enabled !== false;
+
   return useSupabaseQuery(
     ["cart", userId],
     "cart_items",
@@ -242,7 +318,7 @@ export function useCartItemsWithProducts(
         .from("cart_items")
         .select("*, product:products(*)")
         .eq("user_id", userId),
-    options
+    { ...options, enabled }
   );
 }
 
@@ -259,6 +335,9 @@ export function useFavoritesWithProducts(
     "queryKey" | "queryFn"
   >
 ) {
+  // Skip the query if no user ID is provided
+  const enabled = !!userId && options?.enabled !== false;
+
   return useSupabaseQuery(
     ["favorites", userId],
     "favorites",
@@ -267,6 +346,6 @@ export function useFavoritesWithProducts(
         .from("favorites")
         .select("*, product:products(*)")
         .eq("user_id", userId),
-    options
+    { ...options, enabled }
   );
 }

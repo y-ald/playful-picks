@@ -9,7 +9,7 @@ import {
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { v4 as uuidv4 } from "uuid";
 
@@ -50,7 +50,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, userInfo } = useAuthStatus();
+  const { isAuthenticated, userInfo } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

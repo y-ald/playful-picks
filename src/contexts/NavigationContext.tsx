@@ -1,10 +1,11 @@
-import { createContext, useContext, ReactNode } from "react";
-import { useCart } from "@/contexts/CartContext";
-import { useFavorites } from "@/contexts/FavoritesContext";
+import { createContext, useContext, ReactNode, useMemo } from "react";
+import { useNavbarData } from "@/hooks/useNavbarData";
 
 interface NavigationContextType {
   cartCount: number;
   favoritesCount: number;
+  isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(
@@ -12,17 +13,23 @@ const NavigationContext = createContext<NavigationContextType | undefined>(
 );
 
 export const NavigationProvider = ({ children }: { children: ReactNode }) => {
-  // Get cart and favorites counts from their respective contexts
-  const { cartCount } = useCart();
-  const { favoritesCount } = useFavorites();
+  // Use our optimized hook that centralizes data fetching
+  const { cartCount, favoritesCount, isAuthenticated, isAdmin } =
+    useNavbarData();
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      cartCount,
+      favoritesCount,
+      isAuthenticated,
+      isAdmin,
+    }),
+    [cartCount, favoritesCount, isAuthenticated, isAdmin]
+  );
 
   return (
-    <NavigationContext.Provider
-      value={{
-        cartCount,
-        favoritesCount,
-      }}
-    >
+    <NavigationContext.Provider value={contextValue}>
       {children}
     </NavigationContext.Provider>
   );

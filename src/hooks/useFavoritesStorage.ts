@@ -1,33 +1,35 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-const FAVORITES_ID_KEY = 'anonymous_favorites_id';
-const FAVORITES_TIMESTAMP_KEY = 'favorites_timestamp';
+const FAVORITES_ID_KEY = "anonymous_favorites_id";
+const FAVORITES_TIMESTAMP_KEY = "favorites_timestamp";
 const STORAGE_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export const useFavoritesStorage = () => {
   const [favoritesId, setFavoritesId] = useState<string | null>(null);
-  const isAuthenticated = useAuthStatus();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const initializeFavorites = async () => {
       if (isAuthenticated) {
         // Fetch favorites from the database
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return;
 
         const { data, error } = await supabase
-          .from('favorites')
-          .select('product_id')
-          .eq('user_id', user.id);
+          .from("favorites")
+          .select("product_id")
+          .eq("user_id", user.id);
 
         if (error) {
-          console.error('Error fetching favorites:', error);
+          console.error("Error fetching favorites:", error);
           return;
         }
 
-        setFavoritesId(data.map((item: any) => item.product_id).join(','));
+        setFavoritesId(data.map((item: any) => item.product_id).join(","));
       } else {
         // Check if there's an existing favorites ID and if it's still valid
         const storedFavoritesId = localStorage.getItem(FAVORITES_ID_KEY);
@@ -69,15 +71,17 @@ export const useFavoritesStorage = () => {
 
   const addToFavorites = async (productId: string) => {
     if (isAuthenticated) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
-        .from('favorites')
+        .from("favorites")
         .insert([{ user_id: user.id, product_id: productId }]);
 
       if (error) {
-        console.error('Error adding to favorites:', error);
+        console.error("Error adding to favorites:", error);
         return;
       }
 
@@ -86,9 +90,12 @@ export const useFavoritesStorage = () => {
         return newIds;
       });
     } else {
-      const currentFavorites = localStorage.getItem(FAVORITES_ID_KEY || '') || '';
-      const newFavorites = currentFavorites ? `${currentFavorites},${productId}` : productId;
-      localStorage.setItem(FAVORITES_ID_KEY || '', newFavorites);
+      const currentFavorites =
+        localStorage.getItem(FAVORITES_ID_KEY || "") || "";
+      const newFavorites = currentFavorites
+        ? `${currentFavorites},${productId}`
+        : productId;
+      localStorage.setItem(FAVORITES_ID_KEY || "", newFavorites);
       localStorage.setItem(FAVORITES_TIMESTAMP_KEY, Date.now().toString());
       setFavoritesId(newFavorites);
     }
@@ -96,38 +103,57 @@ export const useFavoritesStorage = () => {
 
   const removeFromFavorites = async (productId: string) => {
     if (isAuthenticated) {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { error } = await supabase
-        .from('favorites')
+        .from("favorites")
         .delete()
-        .eq('user_id', user.id)
-        .eq('product_id', productId);
+        .eq("user_id", user.id)
+        .eq("product_id", productId);
 
       if (error) {
-        console.error('Error removing from favorites:', error);
+        console.error("Error removing from favorites:", error);
         return;
       }
 
       setFavoritesId((prevId) => {
-        const newIds = prevId ? prevId.split(',').filter(id => id !== productId).join(',') : '';
+        const newIds = prevId
+          ? prevId
+              .split(",")
+              .filter((id) => id !== productId)
+              .join(",")
+          : "";
         return newIds;
       });
     } else {
-      const currentFavorites = localStorage.getItem(FAVORITES_ID_KEY || '') || '';
-      const newFavorites = currentFavorites.split(',').filter(id => id !== productId).join(',');
-      localStorage.setItem(FAVORITES_ID_KEY || '', newFavorites);
+      const currentFavorites =
+        localStorage.getItem(FAVORITES_ID_KEY || "") || "";
+      const newFavorites = currentFavorites
+        .split(",")
+        .filter((id) => id !== productId)
+        .join(",");
+      localStorage.setItem(FAVORITES_ID_KEY || "", newFavorites);
     }
   };
 
   const isFavorite = (productId: string) => {
     if (isAuthenticated) {
-      return favoritesId?.split(',').includes(productId) || false;
+      return favoritesId?.split(",").includes(productId) || false;
     } else {
-      return favoritesId ? localStorage.getItem(FAVORITES_ID_KEY).split(',').includes(productId) : false;
+      return favoritesId
+        ? localStorage.getItem(FAVORITES_ID_KEY).split(",").includes(productId)
+        : false;
     }
   };
 
-  return { favoritesId, getOrCreateFavoritesId, addToFavorites, removeFromFavorites, isFavorite };
+  return {
+    favoritesId,
+    getOrCreateFavoritesId,
+    addToFavorites,
+    removeFromFavorites,
+    isFavorite,
+  };
 };

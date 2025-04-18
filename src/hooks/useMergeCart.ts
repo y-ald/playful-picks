@@ -1,38 +1,123 @@
-import { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuthStatus } from '@/hooks/useAuthStatus';
+import { useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 
+// Constants
+const CART_KEY = "cart";
+const CART_TIMESTAMP_KEY = "cart_timestamp";
+const MERGE_COMPLETED_KEY = "cart_merge_completed";
+
+/**
+ * Custom hook for merging local cart with remote cart on login
+ * Handles conflict resolution and ensures merge only happens once per session
+ */
 export const useMergeCart = () => {
-  const isAuthenticated = useAuthStatus();
+  const { isAuthenticated, userInfo } = useAuth();
+  const { toast } = useToast();
+  const mergeAttempted = useRef(false);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    // Only run merge once when user becomes authenticated
+    if (isAuthenticated && userInfo && !mergeAttempted.current) {
       const mergeCart = async () => {
-        const storedCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const { data: { user } } = await supabase.auth.getUser();
+        // Check if merge was already completed for this session
+        const mergeCompleted = sessionStorage.getItem(
+          `${MERGE_COMPLETED_KEY}_${userInfo.id}`
+        );
+        if (mergeCompleted === "true") {
+          return;
+        }
 
-        if (user && storedCart.length > 0) {
-          // Insert stored cart items into the database
-          const { error } = await supabase
-            .from('cart_items')
-            .insert(storedCart.map(item => ({
-              product_id: item.product_id,
-              quantity: item.quantity,
-              user_id: user.id,
-            })));
+        // Get local cart
+        const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
+        if (storedCart.length === 0) {
+          // No local cart to merge, mark as completed
+          sessionStorage.setItem(
+            `${MERGE_COMPLETED_KEY}_${userInfo.id}`,
+            "true"
+          );
+          return;
+        }
 
-          if (error) {
-            console.error('Error merging cart:', error);
-            return;
+        try {
+          // Get remote cart
+          const { data: remoteCart, error: fetchError } = await supabase
+            .from("cart_items")
+            .select("*")
+            .eq("user_id", userInfo.id);
+
+          if (fetchError) {
+            console.error("Error fetching remote cart:", fetchError);
+            throw fetchError;
+          }
+
+          // Create a map of product_id -> remote cart item
+          const remoteCartMap = new Map();
+          remoteCart?.forEach((item) => {
+            remoteCartMap.set(item.product_id, item);
+          });
+
+          // Process each local cart item
+          for (const localItem of storedCart) {
+            const remoteItem = remoteCartMap.get(localItem.product_id);
+
+            if (remoteItem) {
+              // Item exists in both carts - update quantity
+              const newQuantity = remoteItem.quantity + localItem.quantity;
+              const { error: updateError } = await supabase
+                .from("cart_items")
+                .update({ quantity: newQuantity })
+                .eq("id", remoteItem.id);
+
+              if (updateError) {
+                console.error("Error updating cart item:", updateError);
+                throw updateError;
+              }
+            } else {
+              // Item only exists locally - add to remote cart
+              const { error: insertError } = await supabase
+                .from("cart_items")
+                .insert({
+                  product_id: localItem.product_id,
+                  quantity: localItem.quantity,
+                  user_id: userInfo.id,
+                });
+
+              if (insertError) {
+                console.error("Error inserting cart item:", insertError);
+                throw insertError;
+              }
+            }
           }
 
           // Clear localStorage after successful merge
-          localStorage.removeItem('cart');
-          localStorage.removeItem('cart_timestamp');
+          localStorage.removeItem(CART_KEY);
+          localStorage.removeItem(CART_TIMESTAMP_KEY);
+
+          // Mark merge as completed for this session
+          sessionStorage.setItem(
+            `${MERGE_COMPLETED_KEY}_${userInfo.id}`,
+            "true"
+          );
+
+          // Notify user
+          toast({
+            title: "Cart synchronized",
+            description: "Your shopping cart has been synchronized",
+          });
+        } catch (error) {
+          console.error("Error merging cart:", error);
+          toast({
+            variant: "destructive",
+            title: "Sync error",
+            description: "Failed to synchronize your cart",
+          });
         }
       };
 
       mergeCart();
+      mergeAttempted.current = true;
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userInfo, toast]);
 };

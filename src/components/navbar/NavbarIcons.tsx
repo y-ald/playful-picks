@@ -1,10 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, Search, LogIn, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
-import { useNavigation } from "@/contexts/NavigationContext";
-import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,56 +12,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
-import { useEffect, useState, useMemo } from "react";
+import { memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavbarData } from "@/hooks/useNavbarData";
 
-export const NavbarIcons = () => {
-  const { language, translations } = useLanguage();
-  const { isAuthenticated, userInfo } = useAuthStatus();
-  const { cartCount } = useCart();
-  const { favoritesCount } = useFavorites();
+// Component implementation
+function NavbarIconsComponent() {
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Only check admin status when authenticated - memoized to avoid repeated checks
-  const checkAdminStatus = useMemo(
-    () => async () => {
-      if (isAuthenticated) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+  // Use our optimized hook for authentication and admin status
+  const { isAuthenticated, isAdmin } = useNavbarData();
 
-        if (user) {
-          const { data } = await supabase
-            .from("profiles")
-            .select("is_admin")
-            .eq("id", user.id)
-            .maybeSingle();
+  // Get cart and favorites counts directly from their contexts
+  // to ensure they're always available regardless of auth status
+  const { cartCount } = useCart();
+  const { favoritesCount } = useFavorites();
 
-          return !!data?.is_admin;
-        }
-      }
-      return false;
-    },
-    [isAuthenticated]
-  );
-
-  // Only run the admin check once when auth status changes
-  useEffect(() => {
-    let isMounted = true;
-
-    checkAdminStatus().then((status) => {
-      if (isMounted) {
-        setIsAdmin(status);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [checkAdminStatus]);
-
+  // Extracted to a separate function to improve readability
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
 
@@ -155,4 +122,7 @@ export const NavbarIcons = () => {
       )}
     </div>
   );
-};
+}
+
+// Export memoized version
+export const NavbarIcons = memo(NavbarIconsComponent);
