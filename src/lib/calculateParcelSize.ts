@@ -1,25 +1,49 @@
+/**
+ * Calculate parcel size based on the number of items in the cart
+ * This is a simplified calculation for demonstration purposes
+ * In a real application, you would calculate the size based on the actual dimensions and weight of the products
+ *
+ * @param itemCount Number of items in the cart
+ * @returns Parcel dimensions object for Shippo API
+ */
 export const calculateParcelSize = (itemCount: number) => {
-  // Base dimensions for 2 items
-  const baseLength = 20;
-  const baseWidth = 15;
-  const baseHeight = 8;
-
-  // Scaling factors (example values, adjust as needed)
-  const lengthFactor = 1.1; // 10% increase per additional item
-  const widthFactor = 1.05;  // 5% increase per additional item
-  const heightFactor = 1.05; // 5% increase per additional item
-
-  // Calculate dimensions for the given number of items
-  const length = baseLength * Math.pow(lengthFactor, itemCount - 2);
-  const width = baseWidth * Math.pow(widthFactor, itemCount - 2);
-  const height = baseHeight * Math.pow(heightFactor, itemCount - 2);
-
-  return {
-    length: length.toFixed(2),
-    width: width.toFixed(2),
-    height: height.toFixed(2),
+  // Base dimensions for a small parcel
+  const baseParcel = {
+    length: 20,
+    width: 15,
+    height: 10,
     distance_unit: "cm",
-    weight: "1",
+    weight: 0.5,
     mass_unit: "kg",
   };
+
+  // Adjust dimensions based on item count
+  if (itemCount <= 1) {
+    return baseParcel;
+  } else if (itemCount <= 3) {
+    return {
+      ...baseParcel,
+      length: 25,
+      width: 20,
+      height: 15,
+      weight: 1.0,
+    };
+  } else if (itemCount <= 5) {
+    return {
+      ...baseParcel,
+      length: 30,
+      width: 25,
+      height: 20,
+      weight: 2.0,
+    };
+  } else {
+    // For larger orders
+    return {
+      ...baseParcel,
+      length: 40,
+      width: 30,
+      height: 25,
+      weight: 3.0 + (itemCount - 5) * 0.5, // Add 0.5kg for each additional item
+    };
+  }
 };
