@@ -6,6 +6,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowLeft } from "lucide-react";
 import { useProductsData } from "@/hooks/useDataFetching";
 import { Skeleton } from "@/components/ui/skeleton";
+import CartItemRow from "@/components/CartItemRow";
 
 export default function Cart() {
   const navigate = useNavigate();
@@ -128,57 +129,9 @@ export default function Cart() {
 
       <div className="grid gap-4 md:grid-cols-[1fr,300px]">
         <div className="space-y-4">
-          {cartItemsWithProducts.map(
-            (item) =>
-              item.product && (
-                <Card key={item.id} className="p-4">
-                  <div className="flex gap-4">
-                    {item.product.image_url && (
-                      <img
-                        src={item.product.image_url}
-                        alt={item.product.name}
-                        className="w-24 h-24 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item.product.name}</h3>
-                      <p className="text-muted-foreground">
-                        ${item.product.price.toFixed(2)}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                        >
-                          -
-                        </Button>
-                        <span>{item.quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                        >
-                          +
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeItem(item.id)}
-                          className="ml-auto"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              )
-          )}
+          {cartItemsWithProducts.map((item) => (
+            <CartItemRow key={item.id} item={item} />
+          ))}
         </div>
 
         <div className="space-y-4">

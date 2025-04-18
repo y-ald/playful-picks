@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import CheckoutItemRow from "./CheckoutItemRow";
 
 interface OrderSummaryProps {
   cartItems: any[];
@@ -7,30 +8,17 @@ interface OrderSummaryProps {
   selectedRate: any;
 }
 
-export default function OrderSummary({ cartItems, total, selectedRate }: OrderSummaryProps) {
+export default function OrderSummary({
+  cartItems,
+  total,
+  selectedRate,
+}: OrderSummaryProps) {
   return (
     <Card className="p-6">
       <h3 className="text-xl font-semibold mb-4">Order Summary</h3>
       <div className="space-y-4">
         {cartItems.map((item: any) => (
-          <div key={item.id} className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              {item.product?.image_url && (
-                <img
-                  src={item.product.image_url}
-                  alt={item.product.name}
-                  className="w-16 h-16 object-cover rounded"
-                />
-              )}
-              <div>
-                <p className="font-medium">{item.product?.name}</p>
-                <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
-              </div>
-            </div>
-            <span className="font-medium">
-              ${((item.product?.price || 0) * item.quantity).toFixed(2)}
-            </span>
-          </div>
+          <CheckoutItemRow key={item.id} item={item} />
         ))}
       </div>
       <div className="border-t mt-6 pt-4">
@@ -47,7 +35,10 @@ export default function OrderSummary({ cartItems, total, selectedRate }: OrderSu
         <div className="flex justify-between items-center mt-4 text-xl font-bold">
           <span>Total</span>
           <span>
-            ${(total + (selectedRate ? parseFloat(selectedRate.amount) : 0)).toFixed(2)}
+            $
+            {(
+              total + (selectedRate ? parseFloat(selectedRate.amount) : 0)
+            ).toFixed(2)}
           </span>
         </div>
       </div>
