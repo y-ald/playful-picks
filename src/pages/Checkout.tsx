@@ -93,6 +93,7 @@ export default function Checkout() {
             cartItems,
             shippingAddress: formValues,
             shippingRate: selectedRate,
+            language, // Pass the current language to the checkout function
           },
         }
       );
@@ -108,6 +109,7 @@ export default function Checkout() {
             shippingAddress: formValues,
             shippingRate: selectedRate,
             orderReference: `order-${Date.now()}`,
+            language, // Store language for post-payment processing
           })
         );
 

@@ -69,13 +69,6 @@ export default function ImprovedShippingForm({
     [fetchShippingRates, onFormSubmit]
   );
 
-  // Pass selected rate to parent component when it changes
-  useEffect(() => {
-    if (selectedRate) {
-      onRateSelected(selectedRate);
-    }
-  }, [selectedRate, onRateSelected]);
-
   // Prefill email if user is authenticated
   useEffect(() => {
     if (userInfo?.email) {

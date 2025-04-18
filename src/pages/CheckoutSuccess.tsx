@@ -28,6 +28,15 @@ export default function CheckoutSuccess() {
 
         const checkoutData = JSON.parse(checkoutDataString);
 
+        // Update the language if it was stored in the checkout data
+        if (checkoutData.language && checkoutData.language !== language) {
+          // This will update the app's language context
+          navigate(`/${checkoutData.language}/checkout/success`, {
+            replace: true,
+          });
+          return; // Stop processing as we're redirecting
+        }
+
         // Process the order (create shipping label and send emails)
         await processOrder(checkoutData);
 

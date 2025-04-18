@@ -20,7 +20,11 @@ import {
 } from "@/components/ui/select";
 import { mapboxClient } from "@/integrations/mapbox/client";
 import { useState } from "react";
-import { ScrollArea, ScrollBar, ScrollAreaPrimitive } from "@/components/ui/scroll-area";
+import {
+  ScrollArea,
+  ScrollBar,
+  ScrollAreaPrimitive,
+} from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -40,22 +44,30 @@ interface ShippingFormProps {
   loading: boolean;
 }
 
-export default function ShippingForm({ form, countries, handleAddressSubmit, loading }: ShippingFormProps) {
+export default function ShippingForm({
+  form,
+  countries,
+  handleAddressSubmit,
+  loading,
+}: ShippingFormProps) {
   const [searchResults, setSearchResults] = useState([]);
 
   const handleSearch = async (query: string, country: string) => {
-    const language = 'en'; // You can make this dynamic based on user preference
+    const language = "en"; // You can make this dynamic based on user preference
     try {
       const results = await mapboxClient.forward(query, language, country);
       setSearchResults(results.slice(0, 5)); // Limit to 5 results
     } catch (error) {
-      console.error('Error searching address:', error);
+      console.error("Error searching address:", error);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleAddressSubmit)} className="space-y-6">
+      <form
+        onSubmit={form.handleSubmit(handleAddressSubmit)}
+        className="space-y-6"
+      >
         <FormField
           control={form.control}
           name="name"
@@ -140,7 +152,7 @@ export default function ShippingForm({ form, countries, handleAddressSubmit, loa
                   className="text-lg"
                   onChange={(e) => {
                     field.onChange(e);
-                    handleSearch(e.target.value, form.watch('country'));
+                    handleSearch(e.target.value, form.watch("country"));
                   }}
                 />
               </FormControl>
@@ -154,10 +166,19 @@ export default function ShippingForm({ form, countries, handleAddressSubmit, loa
                           key={result.id}
                           className="p-2 border rounded cursor-pointer hover:bg-gray-100"
                           onClick={() => {
-                            form.setValue('address', result.properties.address);
-                            form.setValue('city', result.properties.context.place.name || '');
-                            form.setValue('state', result.properties.context.region.name || '');
-                            form.setValue('zipCode', result.properties.context.postcode.name || '');
+                            form.setValue("address", result.properties.address);
+                            form.setValue(
+                              "city",
+                              result.properties.context.place.name || ""
+                            );
+                            form.setValue(
+                              "state",
+                              result.properties.context.region.name || ""
+                            );
+                            form.setValue(
+                              "zipCode",
+                              result.properties.context.postcode.name || ""
+                            );
                             setSearchResults([]);
                           }}
                         >
@@ -203,9 +224,9 @@ export default function ShippingForm({ form, countries, handleAddressSubmit, loa
           />
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full text-lg py-6" 
+        <Button
+          type="submit"
+          className="w-full text-lg py-6"
           disabled={loading}
         >
           Calculate Shipping

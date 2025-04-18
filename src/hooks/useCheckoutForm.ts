@@ -162,7 +162,7 @@ export const useCheckoutForm = (cartItems: any[]) => {
     (result: any) => {
       const properties = result.properties;
       const context = properties.context || {};
-
+      console.log("address", context);
       // Extract address components based on country
       const country = form.getValues("country");
 

@@ -7,9 +7,5 @@
     "lib": ["deno.window"],
     "strict": true
   },
-  "importMap": {
-    "imports": {
-      "stripe": "https://esm.sh/stripe@14.21.0?target=deno"
-    }
-  }
+  "importMap": "import_map.json"
 }
