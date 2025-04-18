@@ -63,25 +63,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const fetchCartItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (isAuthenticated) {
-        // Fetch cart items from the database for authenticated users
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      if (isAuthenticated && userInfo) {
+        // Use userInfo from context instead of making a separate API call
+        const { data, error } = await supabase
+          .from("cart_items")
+          .select("*")
+          .eq("user_id", userInfo.id);
 
-        if (user) {
-          const { data, error } = await supabase
-            .from("cart_items")
-            .select("*")
-            .eq("user_id", user.id);
-
-          if (error) {
-            console.error("Error fetching cart items:", error);
-            return;
-          }
-
-          setCartItems(data || []);
+        if (error) {
+          console.error("Error fetching cart items:", error);
+          return;
         }
+
+        setCartItems(data || []);
       } else {
         // Check if there's an existing cart in localStorage and if it's still valid
         const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
@@ -111,7 +105,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, toast]);
+  }, [isAuthenticated, userInfo, toast]);
 
   // Initial fetch
   useEffect(() => {
@@ -120,14 +114,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Set up real-time subscription for authenticated users
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userInfo) {
+      // Use userInfo from context instead of making a separate API call
       const setupSubscription = async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return;
-
         const channel = supabase
           .channel("cart-changes")
           .on(
@@ -136,7 +125,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               event: "*",
               schema: "public",
               table: "cart_items",
-              filter: `user_id=eq.${user.id}`,
+              filter: `user_id=eq.${userInfo.id}`,
             },
             () => {
               fetchCartItems();
@@ -158,63 +147,57 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
       };
     }
-  }, [isAuthenticated, fetchCartItems, queryClient]);
+  }, [isAuthenticated, userInfo, fetchCartItems, queryClient]);
 
   // Add item to cart
   const addToCart = useCallback(
     async (productId: string, quantity: number = 1) => {
       try {
-        if (isAuthenticated) {
-          // Add to database for authenticated users
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
+        if (isAuthenticated && userInfo) {
+          // Use userInfo from context instead of making a separate API call
+          const { data: existingItem, error: fetchError } = await supabase
+            .from("cart_items")
+            .select("*")
+            .eq("product_id", productId)
+            .eq("user_id", userInfo.id)
+            .maybeSingle();
 
-          if (user) {
-            const { data: existingItem, error: fetchError } = await supabase
-              .from("cart_items")
-              .select("*")
-              .eq("product_id", productId)
-              .eq("user_id", user.id)
-              .maybeSingle();
-
-            if (fetchError) {
-              console.error("Error fetching cart item:", fetchError);
-              throw fetchError;
-            }
-
-            if (existingItem) {
-              // Update quantity if item exists
-              const { error: updateError } = await supabase
-                .from("cart_items")
-                .update({ quantity: existingItem.quantity + quantity })
-                .eq("id", existingItem.id);
-
-              if (updateError) {
-                console.error("Error updating cart item:", updateError);
-                throw updateError;
-              }
-            } else {
-              // Insert new item if it doesn't exist
-              const { error: insertError } = await supabase
-                .from("cart_items")
-                .insert([
-                  {
-                    product_id: productId,
-                    quantity: quantity,
-                    user_id: user.id,
-                  },
-                ]);
-
-              if (insertError) {
-                console.error("Error inserting cart item:", insertError);
-                throw insertError;
-              }
-            }
-
-            // Fetch updated cart items
-            fetchCartItems();
+          if (fetchError) {
+            console.error("Error fetching cart item:", fetchError);
+            throw fetchError;
           }
+
+          if (existingItem) {
+            // Update quantity if item exists
+            const { error: updateError } = await supabase
+              .from("cart_items")
+              .update({ quantity: existingItem.quantity + quantity })
+              .eq("id", existingItem.id);
+
+            if (updateError) {
+              console.error("Error updating cart item:", updateError);
+              throw updateError;
+            }
+          } else {
+            // Insert new item if it doesn't exist
+            const { error: insertError } = await supabase
+              .from("cart_items")
+              .insert([
+                {
+                  product_id: productId,
+                  quantity: quantity,
+                  user_id: userInfo.id,
+                },
+              ]);
+
+            if (insertError) {
+              console.error("Error inserting cart item:", insertError);
+              throw insertError;
+            }
+          }
+
+          // Fetch updated cart items
+          fetchCartItems();
         } else {
           // Add to localStorage for unauthenticated users
           const storedCart = JSON.parse(localStorage.getItem(CART_KEY) || "[]");
@@ -258,14 +241,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [isAuthenticated, fetchCartItems, toast]
+    [isAuthenticated, userInfo, fetchCartItems, toast]
   );
 
   // Remove item from cart
   const removeItem = useCallback(
     async (itemId: string) => {
       try {
-        if (isAuthenticated) {
+        if (isAuthenticated && userInfo) {
           // Remove from database for authenticated users
           const { error } = await supabase
             .from("cart_items")
@@ -305,7 +288,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [isAuthenticated, fetchCartItems, toast]
+    [isAuthenticated, userInfo, fetchCartItems, toast]
   );
 
   // Update item quantity
@@ -317,7 +300,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           return removeItem(itemId);
         }
 
-        if (isAuthenticated) {
+        if (isAuthenticated && userInfo) {
           // Update in database for authenticated users
           const { error: updateError } = await supabase
             .from("cart_items")
@@ -357,28 +340,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [isAuthenticated, fetchCartItems, removeItem, toast]
+    [isAuthenticated, userInfo, fetchCartItems, removeItem, toast]
   );
 
   // Clear entire cart
   const clearCart = useCallback(async () => {
     try {
-      if (isAuthenticated) {
-        // Clear database cart for authenticated users
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      if (isAuthenticated && userInfo) {
+        // Use userInfo from context instead of making a separate API call
+        const { error } = await supabase
+          .from("cart_items")
+          .delete()
+          .eq("user_id", userInfo.id);
 
-        if (user) {
-          const { error } = await supabase
-            .from("cart_items")
-            .delete()
-            .eq("user_id", user.id);
-
-          if (error) {
-            console.error("Error clearing cart:", error);
-            throw error;
-          }
+        if (error) {
+          console.error("Error clearing cart:", error);
+          throw error;
         }
       }
 
@@ -400,7 +377,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       });
       throw error;
     }
-  }, [isAuthenticated, toast]);
+  }, [isAuthenticated, userInfo, toast]);
 
   // Calculate total price
   const calculateTotal = useCallback((items: CartItem[]) => {

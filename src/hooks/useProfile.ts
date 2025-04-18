@@ -85,20 +85,19 @@ export const useProfile = () => {
           setLoading(true);
         }
 
-        // Get user
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
+        // Use userInfo from auth context instead of making a separate API call
+        if (!userInfo) {
           setLoading(false);
           return;
         }
 
         // Use Promise.all to fetch profile and addresses in parallel
         const [profileResponse, addressesResponse] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", user.id).single(),
-          supabase.from("user_addresses").select("*").eq("user_id", user.id),
+          supabase.from("profiles").select("*").eq("id", userInfo.id).single(),
+          supabase
+            .from("user_addresses")
+            .select("*")
+            .eq("user_id", userInfo.id),
         ]);
 
         // Handle profile data
@@ -125,9 +124,12 @@ export const useProfile = () => {
         setCachedData(ADDRESSES_CACHE_KEY, addressesResponse.data || []);
 
         // Update React Query cache
-        queryClient.setQueryData(["profile", user.id], profileResponse.data);
         queryClient.setQueryData(
-          ["addresses", user.id],
+          ["profile", userInfo.id],
+          profileResponse.data
+        );
+        queryClient.setQueryData(
+          ["addresses", userInfo.id],
           addressesResponse.data || []
         );
       } catch (error) {
@@ -142,7 +144,14 @@ export const useProfile = () => {
         fetchInProgress.current = false;
       }
     },
-    [isAuthenticated, getCachedData, setCachedData, toast, queryClient]
+    [
+      isAuthenticated,
+      userInfo,
+      getCachedData,
+      setCachedData,
+      toast,
+      queryClient,
+    ]
   );
 
   // Initial fetch
@@ -159,15 +168,9 @@ export const useProfile = () => {
   // Update profile
   const updateProfile = useCallback(
     async (data: Partial<ProfileData>) => {
-      if (!isAuthenticated || !profileData) return false;
+      if (!isAuthenticated || !profileData || !userInfo) return false;
 
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return false;
-
         // Optimistic update
         const updatedProfile = { ...profileData, ...data };
         setProfileData(updatedProfile);
@@ -179,12 +182,12 @@ export const useProfile = () => {
         const { error } = await supabase
           .from("profiles")
           .update(data)
-          .eq("id", user.id);
+          .eq("id", userInfo.id);
 
         if (error) throw error;
 
         // Update React Query cache
-        queryClient.setQueryData(["profile", user.id], updatedProfile);
+        queryClient.setQueryData(["profile", userInfo.id], updatedProfile);
 
         toast({
           title: "Profile updated",
@@ -208,6 +211,7 @@ export const useProfile = () => {
     },
     [
       isAuthenticated,
+      userInfo,
       profileData,
       setCachedData,
       fetchProfileData,
@@ -219,18 +223,16 @@ export const useProfile = () => {
   // Add address with optimistic updates
   const addAddress = useCallback(
     async (address: Omit<AddressData, "id">) => {
-      if (!isAuthenticated) return null;
+      if (!isAuthenticated || !userInfo) return null;
 
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return null;
-
         // Create a temporary ID for optimistic update
         const tempId = `temp_${Date.now()}`;
-        const optimisticAddress = { ...address, id: tempId, user_id: user.id };
+        const optimisticAddress = {
+          ...address,
+          id: tempId,
+          user_id: userInfo.id,
+        };
 
         // Optimistic update
         const updatedAddresses = [...addresses, optimisticAddress];
@@ -242,7 +244,7 @@ export const useProfile = () => {
         // Update database
         const { data, error } = await supabase
           .from("user_addresses")
-          .insert({ ...address, user_id: user.id })
+          .insert({ ...address, user_id: userInfo.id })
           .select()
           .single();
 
@@ -258,7 +260,7 @@ export const useProfile = () => {
         setCachedData(ADDRESSES_CACHE_KEY, finalAddresses);
 
         // Update React Query cache
-        queryClient.setQueryData(["addresses", user.id], finalAddresses);
+        queryClient.setQueryData(["addresses", userInfo.id], finalAddresses);
 
         toast({
           title: "Address added",
@@ -282,6 +284,7 @@ export const useProfile = () => {
     },
     [
       isAuthenticated,
+      userInfo,
       addresses,
       setCachedData,
       fetchProfileData,
@@ -293,7 +296,7 @@ export const useProfile = () => {
   // Update address with optimistic updates
   const updateAddress = useCallback(
     async (id: string, address: Partial<AddressData>) => {
-      if (!isAuthenticated) return false;
+      if (!isAuthenticated || !userInfo) return false;
 
       try {
         // Optimistic update
@@ -314,12 +317,7 @@ export const useProfile = () => {
         if (error) throw error;
 
         // Update React Query cache
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          queryClient.setQueryData(["addresses", user.id], updatedAddresses);
-        }
+        queryClient.setQueryData(["addresses", userInfo.id], updatedAddresses);
 
         toast({
           title: "Address updated",
@@ -343,6 +341,7 @@ export const useProfile = () => {
     },
     [
       isAuthenticated,
+      userInfo,
       addresses,
       setCachedData,
       fetchProfileData,
@@ -354,7 +353,7 @@ export const useProfile = () => {
   // Delete address with optimistic updates
   const deleteAddress = useCallback(
     async (id: string) => {
-      if (!isAuthenticated) return false;
+      if (!isAuthenticated || !userInfo) return false;
 
       try {
         // Optimistic update
@@ -373,12 +372,7 @@ export const useProfile = () => {
         if (error) throw error;
 
         // Update React Query cache
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          queryClient.setQueryData(["addresses", user.id], updatedAddresses);
-        }
+        queryClient.setQueryData(["addresses", userInfo.id], updatedAddresses);
 
         toast({
           title: "Address deleted",
@@ -402,6 +396,7 @@ export const useProfile = () => {
     },
     [
       isAuthenticated,
+      userInfo,
       addresses,
       setCachedData,
       fetchProfileData,
@@ -413,7 +408,7 @@ export const useProfile = () => {
   // Set default address with optimistic updates
   const setDefaultAddress = useCallback(
     async (id: string) => {
-      if (!isAuthenticated) return false;
+      if (!isAuthenticated || !userInfo) return false;
 
       try {
         // Optimistic update
@@ -435,12 +430,7 @@ export const useProfile = () => {
         if (error) throw error;
 
         // Update React Query cache
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (user) {
-          queryClient.setQueryData(["addresses", user.id], updatedAddresses);
-        }
+        queryClient.setQueryData(["addresses", userInfo.id], updatedAddresses);
 
         toast({
           title: "Default address updated",
@@ -464,6 +454,7 @@ export const useProfile = () => {
     },
     [
       isAuthenticated,
+      userInfo,
       addresses,
       setCachedData,
       fetchProfileData,

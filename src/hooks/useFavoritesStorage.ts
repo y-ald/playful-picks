@@ -8,21 +8,16 @@ const STORAGE_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 export const useFavoritesStorage = () => {
   const [favoritesId, setFavoritesId] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userInfo } = useAuth();
 
   useEffect(() => {
     const initializeFavorites = async () => {
-      if (isAuthenticated) {
-        // Fetch favorites from the database
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) return;
-
+      if (isAuthenticated && userInfo) {
+        // Use userInfo from auth context instead of making a separate API call
         const { data, error } = await supabase
           .from("favorites")
           .select("product_id")
-          .eq("user_id", user.id);
+          .eq("user_id", userInfo.id);
 
         if (error) {
           console.error("Error fetching favorites:", error);
@@ -52,7 +47,7 @@ export const useFavoritesStorage = () => {
     };
 
     initializeFavorites();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userInfo]);
 
   const createNewFavorites = async () => {
     const newFavoritesId = crypto.randomUUID();
@@ -70,15 +65,11 @@ export const useFavoritesStorage = () => {
   };
 
   const addToFavorites = async (productId: string) => {
-    if (isAuthenticated) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
+    if (isAuthenticated && userInfo) {
+      // Use userInfo from auth context instead of making a separate API call
       const { error } = await supabase
         .from("favorites")
-        .insert([{ user_id: user.id, product_id: productId }]);
+        .insert([{ user_id: userInfo.id, product_id: productId }]);
 
       if (error) {
         console.error("Error adding to favorites:", error);
@@ -102,16 +93,12 @@ export const useFavoritesStorage = () => {
   };
 
   const removeFromFavorites = async (productId: string) => {
-    if (isAuthenticated) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
+    if (isAuthenticated && userInfo) {
+      // Use userInfo from auth context instead of making a separate API call
       const { error } = await supabase
         .from("favorites")
         .delete()
-        .eq("user_id", user.id)
+        .eq("user_id", userInfo.id)
         .eq("product_id", productId);
 
       if (error) {
@@ -140,7 +127,7 @@ export const useFavoritesStorage = () => {
   };
 
   const isFavorite = (productId: string) => {
-    if (isAuthenticated) {
+    if (isAuthenticated && userInfo) {
       return favoritesId?.split(",").includes(productId) || false;
     } else {
       return favoritesId
