@@ -2,8 +2,6 @@ import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCart } from "./useCart";
-import { useFavorites } from "./useFavorites";
 
 // Cache key for admin status
 const ADMIN_CACHE_KEY = "user_admin_status";
@@ -25,13 +23,6 @@ export function useNavbarData() {
   const [isAdminLoading, setIsAdminLoading] = useState(false);
   const adminCheckInProgress = useRef(false);
   const queryClient = useQueryClient();
-  
-  // Get cart and favorites data
-  const { cartItems } = useCart();
-  const { favorites } = useFavorites();
-  
-  const cartCount = cartItems?.length || 0;
-  const favoritesCount = favorites?.length || 0;
 
   // Get cached admin status
   const getCachedAdminStatus = useCallback(() => {
@@ -154,9 +145,7 @@ export function useNavbarData() {
       userInfo,
       isAdmin,
       isAdminLoading,
-      cartCount,
-      favoritesCount,
     }),
-    [isAuthenticated, userInfo, isAdmin, isAdminLoading, cartCount, favoritesCount]
+    [isAuthenticated, userInfo, isAdmin, isAdminLoading]
   );
 }

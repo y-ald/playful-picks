@@ -1,5 +1,9 @@
 import { createContext, useContext, ReactNode, useMemo } from "react";
-import { useNavbarData } from "@/hooks/useNavbarData";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/hooks/useCart";
+import { useFavorites } from "@/hooks/useFavorites";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 interface NavigationContextType {
   cartCount: number;
@@ -13,19 +17,40 @@ const NavigationContext = createContext<NavigationContextType | undefined>(
 );
 
 export const NavigationProvider = ({ children }: { children: ReactNode }) => {
-  // Use our optimized hook that centralizes data fetching
-  const { cartCount, favoritesCount, isAuthenticated, isAdmin } =
-    useNavbarData();
+  const { isAuthenticated, userInfo } = useAuth();
+  const { cartItems } = useCart();
+  const { favorites } = useFavorites();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin status
+  useEffect(() => {
+    if (!isAuthenticated || !userInfo) {
+      setIsAdmin(false);
+      return;
+    }
+
+    const checkAdmin = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("is_admin")
+        .eq("id", userInfo.id)
+        .maybeSingle();
+      
+      setIsAdmin(!!data?.is_admin);
+    };
+
+    checkAdmin();
+  }, [isAuthenticated, userInfo]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
     () => ({
-      cartCount,
-      favoritesCount,
+      cartCount: cartItems?.length || 0,
+      favoritesCount: favorites?.length || 0,
       isAuthenticated,
       isAdmin,
     }),
-    [cartCount, favoritesCount, isAuthenticated, isAdmin]
+    [cartItems, favorites, isAuthenticated, isAdmin]
   );
 
   return (
