@@ -6,6 +6,9 @@ import { ProfileData } from "@/models/ProfileData";
 import { AddressData } from "@/models/AddressData";
 import { useQueryClient } from "@tanstack/react-query";
 
+// Re-export types for convenience
+export type { ProfileData, AddressData };
+
 // Cache keys
 const PROFILE_CACHE_KEY = "user_profile_data";
 const ADDRESSES_CACHE_KEY = "user_addresses_data";
