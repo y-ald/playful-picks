@@ -1,9 +1,8 @@
-
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, ShoppingCart, Search, LogIn, User } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useAuthStatus } from '@/hooks/useAuthStatus';
-import { useNavigation } from '@/contexts/NavigationContext';
+import { Link, useNavigate } from "react-router-dom";
+import { Heart, ShoppingCart, Search, LogIn, User } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,54 +11,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from '@/components/ui/use-toast';
-import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useToast } from "@/components/ui/use-toast";
+import { memo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavbarData } from "@/hooks/useNavbarData";
 
-export const NavbarIcons = () => {
-  const { language, translations, setLanguage } = useLanguage();
-  const isAuthenticated = useAuthStatus();
-  const { cartCount, favoritesCount } = useNavigation();
+// Component implementation
+function NavbarIconsComponent() {
+  const { language } = useLanguage();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Only check admin status when authenticated - memoized to avoid repeated checks
-  const checkAdminStatus = useMemo(() => async () => {
-    if (isAuthenticated) {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .maybeSingle();
-          
-        return !!data?.is_admin;
-      }
-    }
-    return false;
-  }, [isAuthenticated]);
+  // Use our optimized hook for authentication and admin status
+  const { isAuthenticated, isAdmin } = useNavbarData();
 
-  // Only run the admin check once when auth status changes
-  useEffect(() => {
-    let isMounted = true;
-    
-    checkAdminStatus().then(status => {
-      if (isMounted) {
-        setIsAdmin(status);
-      }
-    });
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [checkAdminStatus]);
+  // Get cart and favorites counts directly from their contexts
+  // to ensure they're always available regardless of auth status
+  const { cartCount } = useCart();
+  const { favoritesCount } = useFavorites();
 
+  // Extracted to a separate function to improve readability
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
-    
+
     if (error) {
       toast({
         title: "Error",
@@ -68,12 +42,12 @@ export const NavbarIcons = () => {
       });
       return;
     }
-    
+
     toast({
       title: "Signed out",
       description: "You have been signed out successfully.",
     });
-    
+
     navigate(`/${language}`);
   };
 
@@ -82,7 +56,10 @@ export const NavbarIcons = () => {
       <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
         <Search className="w-5 h-5 text-gray-600" />
       </button>
-      <Link to={`/${language}/favorites`} className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+      <Link
+        to={`/${language}/favorites`}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+      >
         <Heart className="w-5 h-5 text-gray-600" />
         {favoritesCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-fade-in">
@@ -90,7 +67,10 @@ export const NavbarIcons = () => {
           </span>
         )}
       </Link>
-      <Link to={`/${language}/cart`} className="p-2 hover:bg-gray-100 rounded-full transition-colors relative">
+      <Link
+        to={`/${language}/cart`}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+      >
         <ShoppingCart className="w-5 h-5 text-gray-600" />
         {cartCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-primary text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-fade-in">
@@ -98,7 +78,7 @@ export const NavbarIcons = () => {
           </span>
         )}
       </Link>
-      
+
       {isAuthenticated ? (
         <DropdownMenu>
           <DropdownMenuTrigger className="p-2 hover:bg-gray-100 rounded-full transition-colors outline-none">
@@ -110,23 +90,30 @@ export const NavbarIcons = () => {
             <DropdownMenuItem onClick={() => navigate(`/${language}/account`)}>
               Profile
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(`/${language}/account/addresses`)}>
+            <DropdownMenuItem
+              onClick={() => navigate(`/${language}/account/addresses`)}
+            >
               Addresses
             </DropdownMenuItem>
             {isAdmin && (
-              <DropdownMenuItem onClick={() => navigate(`/${language}/account/admin`)}>
+              <DropdownMenuItem
+                onClick={() => navigate(`/${language}/account/admin`)}
+              >
                 Admin
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={handleSignOut}>
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={handleSignOut}
+            >
               Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Link 
-          to={`/${language}/auth`} 
+        <Link
+          to={`/${language}/auth`}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           title="Login/Signup"
         >
@@ -135,4 +122,7 @@ export const NavbarIcons = () => {
       )}
     </div>
   );
-};
+}
+
+// Export memoized version
+export const NavbarIcons = memo(NavbarIconsComponent);
