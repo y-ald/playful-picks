@@ -1,10 +1,10 @@
 project_id = "ktmqwhkywxogxktuqcfx"
 
 [functions.create-checkout]
-verify_jwt = false
+verify_jwt = true
 
 [functions.shipping]
-verify_jwt = false
+verify_jwt = true
 
 [functions.resend]
 enabled = true

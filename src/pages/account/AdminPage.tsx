@@ -31,20 +31,21 @@ export default function AdminPage() {
           return;
         }
         
-        // Get profile with admin status
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+        // Check if user has admin role
+        const { data: adminRole, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
         
         if (error) {
-          console.error('Error fetching profile:', error);
+          console.error('Error fetching role:', error);
           setIsAdmin(false);
           return;
         }
         
-        if (!profile?.is_admin) {
+        if (!adminRole) {
           toast({
             title: "Access Denied",
             description: "You don't have admin privileges",

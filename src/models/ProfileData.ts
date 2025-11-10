@@ -3,5 +3,4 @@ export type ProfileData = {
   first_name: string | null;
   last_name: string | null;
   phone_number: string | null;
-  is_admin: boolean | false;
 };

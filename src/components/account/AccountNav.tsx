@@ -44,19 +44,20 @@ export function AccountNav() {
     return location.pathname === `/${lang}${path}`;
   };
 
-  // Check if user is admin
+  // Check if user has admin role
   useEffect(() => {
     const checkAdminStatus = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
         const { data } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
           
-        setIsAdmin(!!data?.is_admin);
+        setIsAdmin(!!data);
       }
     };
     

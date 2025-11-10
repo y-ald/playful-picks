@@ -91,11 +91,12 @@ export function useNavbarData() {
       setIsAdminLoading(true);
 
       try {
-        // Get admin status from profile using the userInfo we already have
+        // Get admin status from user_roles table
         const { data, error } = await supabase
-          .from("profiles")
-          .select("is_admin")
-          .eq("id", userInfo.id)
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userInfo.id)
+          .eq("role", "admin")
           .maybeSingle();
 
         if (error) {
@@ -103,7 +104,7 @@ export function useNavbarData() {
           throw error;
         }
 
-        const adminStatus = !!data?.is_admin;
+        const adminStatus = !!data;
 
         if (isMounted) {
           setIsAdmin(adminStatus);

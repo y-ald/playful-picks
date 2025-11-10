@@ -22,7 +22,7 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
   const { favorites } = useFavorites();
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check admin status
+  // Check admin status using new user_roles table
   useEffect(() => {
     if (!isAuthenticated || !userInfo) {
       setIsAdmin(false);
@@ -31,12 +31,13 @@ export const NavigationProvider = ({ children }: { children: ReactNode }) => {
 
     const checkAdmin = async () => {
       const { data } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", userInfo.id)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userInfo.id)
+        .eq("role", "admin")
         .maybeSingle();
       
-      setIsAdmin(!!data?.is_admin);
+      setIsAdmin(!!data);
     };
 
     checkAdmin();
