@@ -14,13 +14,14 @@ serve(async (req) => {
   }
 
   try {
-    const { cartItems, shippingAddress, shippingRate, language } =
+    const { cartItems, shippingAddress, shippingRate, language, userId } =
       await req.json();
     console.log("Received checkout request:", {
       cartItems,
       shippingAddress,
       shippingRate,
       language,
+      userId,
     });
 
     // Default to English if no language is provided
@@ -37,6 +38,9 @@ serve(async (req) => {
         product_data: {
           name: item.product.name,
           images: item.product.image_url ? [item.product.image_url] : [],
+          metadata: {
+            product_id: item.product.id, // Store product ID for inventory update
+          },
         },
         unit_amount: Math.round(item.product.price * 100), // Convert to cents
       },
@@ -44,6 +48,13 @@ serve(async (req) => {
     }));
 
     console.log("Creating Stripe session with line items:", lineItems);
+
+    // Prepare metadata for webhook processing
+    const metadata = {
+      cart_items: JSON.stringify(cartItems),
+      shipping_rate: JSON.stringify(shippingRate),
+      language: userLanguage,
+    };
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -55,6 +66,11 @@ serve(async (req) => {
       )}/${userLanguage}/checkout/success`,
       cancel_url: `${req.headers.get("origin")}/${userLanguage}/cart`,
       customer_email: shippingAddress.email,
+      client_reference_id: userId || null, // Track user for order creation
+      metadata, // Pass data to webhook
+      shipping_address_collection: {
+        allowed_countries: ["US", "CA"], // Adjust based on your shipping regions
+      },
       shipping_options: [
         {
           shipping_rate_data: {
@@ -63,15 +79,15 @@ serve(async (req) => {
               amount: Math.round(shippingRate.amount * 100), // Convert to cents
               currency: "usd",
             },
-            display_name: shippingRate.provider,
+            display_name: `${shippingRate.provider} - ${shippingRate.servicelevel?.name || 'Standard'}`,
             delivery_estimate: {
               minimum: {
                 unit: "business_day",
-                value: shippingRate.estimated_days,
+                value: shippingRate.estimated_days || 3,
               },
               maximum: {
                 unit: "business_day",
-                value: shippingRate.estimated_days + 2,
+                value: (shippingRate.estimated_days || 3) + 2,
               },
             },
           },

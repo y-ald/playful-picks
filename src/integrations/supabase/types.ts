@@ -398,6 +398,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_product_stock: {
+        Args: { product_uuid: string; quantity_to_subtract: number }
+        Returns: undefined
+      }
       get_default_address: {
         Args: { user_uuid: string }
         Returns: {

@@ -57,17 +57,23 @@ serve(async (req) => {
         { limit: 100 }
       );
 
+      // Get session metadata for shipping and product info
+      const metadata = session.metadata || {};
+      const cartItems = metadata.cart_items ? JSON.parse(metadata.cart_items) : [];
+      const shippingRate = metadata.shipping_rate ? JSON.parse(metadata.shipping_rate) : null;
+
       // Create order record
       const orderId = `order-${Date.now()}`;
       const { error: orderError } = await supabase.from("orders").insert({
         id: orderId,
         user_id: session.client_reference_id || null,
         total_amount: (session.amount_total || 0) / 100,
-        status: "paid",
+        status: "processing",
         payment_status: "paid",
         stripe_payment_id: session.payment_intent as string,
         stripe_checkout_session_id: session.id,
         shipping_address: JSON.stringify(session.shipping_details || {}),
+        shipping_method: shippingRate ? `${shippingRate.provider} - ${shippingRate.servicelevel?.name}` : null,
         items: JSON.stringify(lineItems.data),
         created_at: new Date().toISOString(),
       });
@@ -80,15 +86,12 @@ serve(async (req) => {
       console.log("Order created successfully:", orderId);
 
       // Update product inventory
-      for (const item of lineItems.data) {
-        // Extract product ID from metadata (need to be set when creating line items)
-        const productId = item.price?.product as string;
-
-        if (productId) {
+      for (const item of cartItems) {
+        if (item.product?.id) {
           const { error: inventoryError } = await supabase.rpc(
             "decrement_product_stock",
             {
-              product_uuid: productId,
+              product_uuid: item.product.id,
               quantity_to_subtract: item.quantity || 1,
             }
           );
@@ -101,6 +104,97 @@ serve(async (req) => {
       }
 
       console.log("Inventory updated successfully");
+
+      // Create shipping label if shipping rate was selected
+      if (shippingRate && session.shipping_details) {
+        try {
+          console.log("Creating shipping label...");
+          
+          // Call shipping function to create label
+          const { data: labelData, error: labelError } = await supabase.functions.invoke(
+            "shipping",
+            {
+              body: {
+                action: "createLabel",
+                payload: {
+                  rate: shippingRate.object_id,
+                  label_file_type: "PDF",
+                  async: false,
+                },
+              },
+            }
+          );
+
+          if (labelError) {
+            console.error("Error creating shipping label:", labelError);
+          } else {
+            console.log("Shipping label created:", labelData);
+
+            // Update order with tracking info
+            await supabase
+              .from("orders")
+              .update({
+                tracking_number: labelData.tracking_number,
+                status: "shipped",
+              })
+              .eq("id", orderId);
+
+            // Send label email to admin
+            const shippingDetails = session.shipping_details;
+            const { error: emailError } = await supabase.functions.invoke(
+              "send-email",
+              {
+                body: {
+                  to: "hpaulfernand@yahoo.com",
+                  subject: `New Order Shipping Label - ${orderId}`,
+                  html: `
+                    <h1>New Order Received: ${orderId}</h1>
+                    <p>Payment confirmed via Stripe. Shipping label has been generated.</p>
+                    
+                    <h2>Customer Information</h2>
+                    <p><strong>Name:</strong> ${shippingDetails.name}</p>
+                    <p><strong>Email:</strong> ${session.customer_details?.email || 'N/A'}</p>
+                    
+                    <h2>Shipping Address</h2>
+                    <p>${shippingDetails.address?.line1 || ''}</p>
+                    ${shippingDetails.address?.line2 ? `<p>${shippingDetails.address.line2}</p>` : ''}
+                    <p>${shippingDetails.address?.city || ''}, ${shippingDetails.address?.state || ''} ${shippingDetails.address?.postal_code || ''}</p>
+                    <p>${shippingDetails.address?.country || ''}</p>
+                    
+                    <h2>Order Items</h2>
+                    <ul>
+                      ${cartItems.map((item: any) => `
+                        <li>${item.product?.name || 'Product'} - Qty: ${item.quantity} - $${((item.product?.price || 0) * item.quantity).toFixed(2)}</li>
+                      `).join('')}
+                    </ul>
+                    
+                    <h2>Shipping Information</h2>
+                    <p><strong>Carrier:</strong> ${shippingRate.provider}</p>
+                    <p><strong>Service:</strong> ${shippingRate.servicelevel?.name || 'Standard'}</p>
+                    <p><strong>Tracking Number:</strong> ${labelData.tracking_number}</p>
+                    
+                    <h2>Shipping Label</h2>
+                    <p><a href="${labelData.label_url}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Download Label (PDF 4x6)</a></p>
+                    
+                    <p style="margin-top: 30px; color: #666; font-size: 12px;">
+                      Print this label on 4x6 inch thermal paper or regular paper and attach to package.
+                    </p>
+                  `,
+                },
+              }
+            );
+
+            if (emailError) {
+              console.error("Error sending admin email:", emailError);
+            } else {
+              console.log("Admin email sent successfully");
+            }
+          }
+        } catch (labelCreationError) {
+          console.error("Error in shipping label workflow:", labelCreationError);
+          // Don't throw - order is still valid even if label fails
+        }
+      }
     }
 
     // Handle failed payments

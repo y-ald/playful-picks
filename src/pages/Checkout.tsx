@@ -94,6 +94,7 @@ export default function Checkout() {
             shippingAddress: formValues,
             shippingRate: selectedRate,
             language, // Pass the current language to the checkout function
+            userId: userInfo?.id || null, // Pass user ID for order tracking
           },
         }
       );

@@ -44,18 +44,30 @@ const getRates = async (shipment: any) => {
 };
 
 const createLabel = async (transaction: any) => {
-  console.log("createLabel response", JSON.stringify(transaction));
+  console.log("createLabel request", JSON.stringify(transaction));
+  
+  // Add label format for 4x6 label size (standard shipping label)
+  const requestBody = {
+    ...transaction,
+    label_file_type: "PDF",
+    label_format: "PDF_4x6", // 4x6 inch label size for standard thermal printers
+  };
+  
   const response = await fetchWithTimeout(`${SHIPPO_API_URL}/transactions`, {
     method: "POST",
     headers: { ...headers, "SHIPPO-API-VERSION": "2018-02-08" },
-    body: JSON.stringify(transaction),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create label");
+    const errorText = await response.text();
+    console.error("Shippo API error:", errorText);
+    throw new Error(`Failed to create label: ${errorText}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log("createLabel response", JSON.stringify(result));
+  return result;
 };
 
 const trackShipment = async (tracking: any) => {
