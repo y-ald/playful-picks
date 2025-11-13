@@ -19,6 +19,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           id: string
+          order_id: string | null
           product_id: string | null
           quantity: number
           user_id: string | null
@@ -27,6 +28,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          order_id?: string | null
           product_id?: string | null
           quantity?: number
           user_id?: string | null
@@ -35,11 +37,19 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          order_id?: string | null
           product_id?: string | null
           quantity?: number
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "cart_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cart_items_product_id_fkey"
             columns: ["product_id"]
@@ -152,9 +162,13 @@ export type Database = {
           created_at: string
           id: string
           items: string | null
+          payment_status: string | null
+          shipment_id: string | null
           shipping_address: string
           shipping_method: string | null
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_id: string | null
           total_amount: number
           tracking_number: string | null
           user_id: string | null
@@ -163,9 +177,13 @@ export type Database = {
           created_at?: string
           id?: string
           items?: string | null
+          payment_status?: string | null
+          shipment_id?: string | null
           shipping_address: string
           shipping_method?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_id?: string | null
           total_amount: number
           tracking_number?: string | null
           user_id?: string | null
@@ -174,14 +192,26 @@ export type Database = {
           created_at?: string
           id?: string
           items?: string | null
+          payment_status?: string | null
+          shipment_id?: string | null
           shipping_address?: string
           shipping_method?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_id?: string | null
           total_amount?: number
           tracking_number?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
