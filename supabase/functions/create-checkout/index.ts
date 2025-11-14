@@ -56,8 +56,8 @@ serve(async (req) => {
       language: userLanguage,
     };
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+    // Prepare session options
+    const sessionOptions: any = {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -66,7 +66,6 @@ serve(async (req) => {
       )}/${userLanguage}/checkout/success`,
       cancel_url: `${req.headers.get("origin")}/${userLanguage}/cart`,
       customer_email: shippingAddress.email,
-      client_reference_id: userId || null, // Track user for order creation
       metadata, // Pass data to webhook
       shipping_address_collection: {
         allowed_countries: ["US", "CA"], // Adjust based on your shipping regions
@@ -93,7 +92,15 @@ serve(async (req) => {
           },
         },
       ],
-    });
+    };
+
+    // Only add client_reference_id if userId exists and is not empty
+    if (userId && userId.trim() !== "") {
+      sessionOptions.client_reference_id = userId;
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     console.log("Created Stripe session:", session.id);
 
