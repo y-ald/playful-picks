@@ -50,7 +50,14 @@ serve(async (req) => {
     console.log("Creating Stripe session with line items:", lineItems);
 
     // Prepare metadata for webhook processing
-    // Extract only essential shipping info to stay within Stripe's 500 char limit
+    // Extract only essential info to stay within Stripe's 500 char limit per field
+    const essentialCartItems = cartItems.map((item: any) => ({
+      product_id: item.product.id,
+      name: item.product.name,
+      price: item.product.price,
+      quantity: item.quantity,
+    }));
+    
     const essentialShippingInfo = {
       object_id: shippingRate.object_id,
       provider: shippingRate.provider,
@@ -60,7 +67,7 @@ serve(async (req) => {
     };
     
     const metadata = {
-      cart_items: JSON.stringify(cartItems),
+      cart_items: JSON.stringify(essentialCartItems),
       shipping_info: JSON.stringify(essentialShippingInfo),
       language: userLanguage,
     };
