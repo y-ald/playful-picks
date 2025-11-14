@@ -87,11 +87,11 @@ serve(async (req) => {
 
       // Update product inventory
       for (const item of cartItems) {
-        if (item.product?.id) {
+        if (item.product_id) {
           const { error: inventoryError } = await supabase.rpc(
             "decrement_product_stock",
             {
-              product_uuid: item.product.id,
+              product_uuid: item.product_id,
               quantity_to_subtract: item.quantity || 1,
             }
           );
@@ -164,7 +164,7 @@ serve(async (req) => {
                     <h2>Order Items</h2>
                     <ul>
                       ${cartItems.map((item: any) => `
-                        <li>${item.product?.name || 'Product'} - Qty: ${item.quantity} - $${((item.product?.price || 0) * item.quantity).toFixed(2)}</li>
+                        <li>${item.name || 'Product'} - Qty: ${item.quantity} - $${((item.price || 0) * item.quantity).toFixed(2)}</li>
                       `).join('')}
                     </ul>
                     
