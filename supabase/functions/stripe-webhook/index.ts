@@ -60,7 +60,7 @@ serve(async (req) => {
       // Get session metadata for shipping and product info
       const metadata = session.metadata || {};
       const cartItems = metadata.cart_items ? JSON.parse(metadata.cart_items) : [];
-      const shippingRate = metadata.shipping_rate ? JSON.parse(metadata.shipping_rate) : null;
+      const shippingInfo = metadata.shipping_info ? JSON.parse(metadata.shipping_info) : null;
 
       // Create order record
       const orderId = `order-${Date.now()}`;
@@ -73,7 +73,7 @@ serve(async (req) => {
         stripe_payment_id: session.payment_intent as string,
         stripe_checkout_session_id: session.id,
         shipping_address: JSON.stringify(session.shipping_details || {}),
-        shipping_method: shippingRate ? `${shippingRate.provider} - ${shippingRate.servicelevel?.name}` : null,
+        shipping_method: shippingInfo ? `${shippingInfo.provider} - ${shippingInfo.servicelevel_name}` : null,
         items: JSON.stringify(lineItems.data),
         created_at: new Date().toISOString(),
       });
@@ -105,8 +105,8 @@ serve(async (req) => {
 
       console.log("Inventory updated successfully");
 
-      // Create shipping label if shipping rate was selected
-      if (shippingRate && session.shipping_details) {
+      // Create shipping label if shipping info was provided
+      if (shippingInfo && session.shipping_details) {
         try {
           console.log("Creating shipping label...");
           
@@ -117,7 +117,7 @@ serve(async (req) => {
               body: {
                 action: "createLabel",
                 payload: {
-                  rate: shippingRate.object_id,
+                  rate: shippingInfo.object_id,
                   label_file_type: "PDF",
                   async: false,
                 },
@@ -169,8 +169,8 @@ serve(async (req) => {
                     </ul>
                     
                     <h2>Shipping Information</h2>
-                    <p><strong>Carrier:</strong> ${shippingRate.provider}</p>
-                    <p><strong>Service:</strong> ${shippingRate.servicelevel?.name || 'Standard'}</p>
+                    <p><strong>Carrier:</strong> ${shippingInfo.provider}</p>
+                    <p><strong>Service:</strong> ${shippingInfo.servicelevel_name}</p>
                     <p><strong>Tracking Number:</strong> ${labelData.tracking_number}</p>
                     
                     <h2>Shipping Label</h2>
