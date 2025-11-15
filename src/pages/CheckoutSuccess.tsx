@@ -44,12 +44,16 @@ export default function CheckoutSuccess() {
         sessionStorage.removeItem("checkout_data");
 
         // Clear cart items from database
-        const { error } = await supabase
-          .from("cart_items")
-          .delete()
-          .neq("id", ""); // Delete all items
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { error } = await supabase
+            .from("cart_items")
+            .delete()
+            .eq("user_id", user.id);
 
-        if (error) throw error;
+          if (error) throw error;
+        }
 
         toast({
           title: "Success",
