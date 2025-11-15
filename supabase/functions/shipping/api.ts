@@ -46,9 +46,15 @@ const getRates = async (shipment: any) => {
 const createLabel = async (transaction: any) => {
   console.log("createLabel request", JSON.stringify(transaction));
   
+  // Convert metadata to string if it's an object (Shippo requires string)
+  const metadata = typeof transaction.metadata === 'object' 
+    ? JSON.stringify(transaction.metadata)
+    : transaction.metadata;
+  
   // Add label format for 4x6 label size (standard shipping label)
   const requestBody = {
     ...transaction,
+    metadata,
     label_file_type: "PDF",
     label_format: "PDF_4x6", // 4x6 inch label size for standard thermal printers
   };
