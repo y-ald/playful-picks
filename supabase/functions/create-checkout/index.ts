@@ -72,7 +72,7 @@ serve(async (req) => {
       language: userLanguage,
     };
 
-    // Prepare session options
+    // Prepare session options with prefilled shipping address
     const sessionOptions: any = {
       payment_method_types: ["card"],
       line_items: lineItems,
@@ -83,8 +83,15 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/${userLanguage}/cart`,
       customer_email: shippingAddress.email,
       metadata, // Pass data to webhook
-      shipping_address_collection: {
-        allowed_countries: ["US", "CA"], // Adjust based on your shipping regions
+      shipping_details: {
+        name: shippingAddress.name,
+        address: {
+          line1: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          postal_code: shippingAddress.zipCode,
+          country: shippingAddress.country,
+        },
       },
       shipping_options: [
         {
