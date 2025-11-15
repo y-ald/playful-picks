@@ -3,9 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePostPaymentProcessing } from "@/hooks/usePostPaymentProcessing";
+import { useCart } from "@/contexts/CartContext";
 import { Loader2 } from "lucide-react";
 
 export default function CheckoutSuccess() {
@@ -13,6 +13,7 @@ export default function CheckoutSuccess() {
   const { toast } = useToast();
   const { language } = useLanguage();
   const { processOrder, isProcessing } = usePostPaymentProcessing();
+  const { clearCart } = useCart();
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
@@ -43,17 +44,8 @@ export default function CheckoutSuccess() {
         // Clear checkout data from session storage
         sessionStorage.removeItem("checkout_data");
 
-        // Clear cart items from database
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          const { error } = await supabase
-            .from("cart_items")
-            .delete()
-            .eq("user_id", user.id);
-
-          if (error) throw error;
-        }
+        // Clear cart using the cart context (handles both DB and local state)
+        await clearCart();
 
         toast({
           title: "Success",
