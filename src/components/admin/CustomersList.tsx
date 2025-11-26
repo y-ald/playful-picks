@@ -39,42 +39,23 @@ export const CustomersList = () => {
     try {
       setLoading(true);
       
-      // Get all users from auth
-      const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+      // Get the auth token
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (authError) throw authError;
+      if (!session) {
+        throw new Error("No session found");
+      }
 
-      // For each user, fetch their profile and order stats
-      const customersWithData = await Promise.all(
-        authData.users.map(async (user) => {
-          // Fetch profile
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("first_name, last_name, phone_number")
-            .eq("id", user.id)
-            .single();
+      // Call the edge function to get customers
+      const { data, error } = await supabase.functions.invoke('admin-get-customers', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-          // Fetch order stats
-          const { data: orders } = await supabase
-            .from("orders")
-            .select("total_amount")
-            .eq("user_id", user.id);
+      if (error) throw error;
 
-          const ordersCount = orders?.length || 0;
-          const totalSpent = orders?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
-
-          return {
-            id: user.id,
-            email: user.email || "",
-            created_at: user.created_at,
-            profile: profile || undefined,
-            orders_count: ordersCount,
-            total_spent: totalSpent,
-          };
-        })
-      );
-
-      setCustomers(customersWithData);
+      setCustomers(data.customers || []);
     } catch (error) {
       console.error("Error fetching customers:", error);
       toast({
