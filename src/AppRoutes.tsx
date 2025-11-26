@@ -33,7 +33,7 @@ const AppRoutes = () => {
       <Route path="/:lang/tracking" element={<TrackingPage />} />
       <Route path="/:lang/account" element={<ProfilePage />} />
       <Route path="/:lang/account/addresses" element={<AddressesPage />} />
-      <Route path="/:lang/account/admin" element={<AdminPage />} />
+      <Route path="/:lang/account/admin/*" element={<AdminPage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
