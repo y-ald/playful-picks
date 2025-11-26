@@ -75,7 +75,7 @@ const routes = [
     element: <AddressesPage />,
   },
   {
-    path: '/:lang/account/admin',
+    path: '/:lang/account/admin/*',
     element: <AdminPage />,
   },
   {
