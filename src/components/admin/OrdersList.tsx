@@ -3,8 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink, Truck } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Loader2, ExternalLink, Truck, Eye } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Table,
   TableBody,
@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { OrderDetailsDialog } from "./OrderDetailsDialog";
 
 interface Order {
   id: string;
@@ -28,12 +29,16 @@ interface Order {
     carrier: string | null;
     label_url: string | null;
     status: string | null;
+    address_from: any;
+    address_to: any;
   };
 }
 
 export const OrdersList = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -47,7 +52,7 @@ export const OrdersList = () => {
         .from("orders")
         .select(`
           *,
-          shipment:shipments(carrier, label_url, status)
+          shipment:shipments(carrier, label_url, status, address_from, address_to)
         `)
         .order("created_at", { ascending: false });
 
@@ -88,6 +93,11 @@ export const OrdersList = () => {
     );
   };
 
+  const handleViewDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -97,13 +107,20 @@ export const OrdersList = () => {
   }
 
   return (
-    <Card className="p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold">Commandes</h2>
-        <p className="text-muted-foreground">
-          Gérez et suivez toutes les commandes
-        </p>
-      </div>
+    <>
+      <OrderDetailsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        order={selectedOrder}
+      />
+      
+      <Card className="p-6">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold">Commandes</h2>
+          <p className="text-muted-foreground">
+            Gérez et suivez toutes les commandes
+          </p>
+        </div>
 
       <div className="overflow-x-auto">
         <Table>
@@ -117,12 +134,13 @@ export const OrdersList = () => {
               <TableHead>Tracking</TableHead>
               <TableHead>Transporteur</TableHead>
               <TableHead>Label</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {orders.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   Aucune commande pour le moment
                 </TableCell>
               </TableRow>
@@ -171,6 +189,16 @@ export const OrdersList = () => {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleViewDetails(order)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Détails
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -178,5 +206,6 @@ export const OrdersList = () => {
         </Table>
       </div>
     </Card>
+    </>
   );
 };
