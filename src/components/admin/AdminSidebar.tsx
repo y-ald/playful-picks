@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/NavLink";
-import { ShoppingBag, Package, Users, Home } from "lucide-react";
+import { ShoppingBag, Package, Users, Home, BarChart3 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +14,15 @@ export const AdminSidebar = () => {
       </div>
 
       <nav className="flex-1 space-y-2">
+        <NavLink
+          to={`/${lang}/account/admin/dashboard`}
+          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-accent"
+          activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span>Dashboard</span>
+        </NavLink>
+
         <NavLink
           to={`/${lang}/account/admin/products`}
           className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors hover:bg-accent"

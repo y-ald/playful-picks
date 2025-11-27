@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Mail, Phone, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Mail, Phone, Edit } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { CustomerEditDialog } from "./CustomerEditDialog";
 import {
   Table,
   TableBody,
@@ -29,6 +31,8 @@ interface Customer {
 export const CustomersList = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -95,12 +99,13 @@ export const CustomersList = () => {
               <TableHead>Inscrit le</TableHead>
               <TableHead>Commandes</TableHead>
               <TableHead>Total dépensé</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {customers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                   Aucun client inscrit
                 </TableCell>
               </TableRow>
@@ -143,12 +148,31 @@ export const CustomersList = () => {
                   <TableCell className="font-semibold">
                     ${(customer.total_spent || 0).toFixed(2)}
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingCustomer(customer);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
+
+      <CustomerEditDialog
+        customer={editingCustomer}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={fetchCustomers}
+      />
     </Card>
   );
 };

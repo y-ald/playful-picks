@@ -1,20 +1,17 @@
-
 import { AddressList } from "@/components/account/AddressList";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AccountLayout } from "@/components/account/AccountLayout";
 import { useProfile } from "@/hooks/useProfile";
-import { useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Link } from "react-router-dom";
-import { Loader2, Home } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export default function AddressesPage() {
   const { loading } = useProfile();
-  const { lang } = useParams<{ lang: string }>();
 
   return (
+    <AccountLayout>
       <Card>
         <CardHeader>
-          <CardTitle>Manage Addresses</CardTitle>``
+          <CardTitle>Gérer les adresses</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -25,12 +22,7 @@ export default function AddressesPage() {
             <AddressList />
           )}
         </CardContent>
-        <Link to={`/${lang}`}>
-          <Button variant="outline" size="sm" className="flex items-center gap-2">
-            <Home className="h-4 w-4" />
-              Home
-          </Button>
-        </Link>
       </Card>
+    </AccountLayout>
   );
 }

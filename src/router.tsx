@@ -15,6 +15,9 @@ import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/account/ProfilePage';
 import AddressesPage from './pages/account/AddressesPage';
 import AdminPage from './pages/account/AdminPage';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Legal from './pages/Legal';
 import { useLanguage } from './contexts/LanguageContext';
 
 const routes = [
@@ -77,6 +80,18 @@ const routes = [
   {
     path: '/:lang/account/admin/*',
     element: <AdminPage />,
+  },
+  {
+    path: '/:lang/terms',
+    element: <Terms />,
+  },
+  {
+    path: '/:lang/privacy',
+    element: <Privacy />,
+  },
+  {
+    path: '/:lang/legal',
+    element: <Legal />,
   },
   {
     path: '*',

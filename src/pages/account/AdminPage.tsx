@@ -8,6 +8,7 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { ProductsSection } from '@/components/admin/ProductsSection';
 import { OrdersList } from '@/components/admin/OrdersList';
 import { CustomersList } from '@/components/admin/CustomersList';
+import { DashboardSection } from '@/components/admin/DashboardSection';
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -82,7 +83,8 @@ export default function AdminPage() {
         <AdminSidebar />
         <main className="flex-1 p-8 bg-background">
           <Routes>
-            <Route path="/" element={<Navigate to={`/${lang}/account/admin/products`} replace />} />
+            <Route path="/" element={<Navigate to={`/${lang}/account/admin/dashboard`} replace />} />
+            <Route path="/dashboard" element={<DashboardSection />} />
             <Route path="/products" element={<ProductsSection />} />
             <Route path="/orders" element={<OrdersList />} />
             <Route path="/customers" element={<CustomersList />} />

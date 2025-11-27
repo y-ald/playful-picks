@@ -7,6 +7,8 @@ import { CartProvider } from "@/contexts/CartContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataSyncManager } from "@/components/DataSyncManager";
+import Navbar from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import AppRoutes from "./AppRoutes";
 
 /**
@@ -34,7 +36,9 @@ function App() {
               <CartProvider>
                 <FavoritesProvider>
                   <NavigationProvider>
+                    <Navbar />
                     <AppRoutes />
+                    <Footer />
                     <Toaster />
                   </NavigationProvider>
                 </FavoritesProvider>
