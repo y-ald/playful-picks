@@ -15,6 +15,9 @@ import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/account/ProfilePage';
 import AddressesPage from './pages/account/AddressesPage';
 import AdminPage from './pages/account/AdminPage';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import Legal from './pages/Legal';
 
 const AppRoutes = () => {
   return (
@@ -34,6 +37,9 @@ const AppRoutes = () => {
       <Route path="/:lang/account" element={<ProfilePage />} />
       <Route path="/:lang/account/addresses" element={<AddressesPage />} />
       <Route path="/:lang/account/admin/*" element={<AdminPage />} />
+      <Route path="/:lang/terms" element={<Terms />} />
+      <Route path="/:lang/privacy" element={<Privacy />} />
+      <Route path="/:lang/legal" element={<Legal />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
