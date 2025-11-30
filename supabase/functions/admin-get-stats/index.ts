@@ -44,7 +44,12 @@ serve(async (req) => {
     const now = new Date();
     let startDate: Date;
 
-    if (period === 'month') {
+    if (period === 'week') {
+      const dayOfWeek = now.getDay();
+      const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      startDate = new Date(now.setDate(diff));
+      startDate.setHours(0, 0, 0, 0);
+    } else if (period === 'month') {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else {
       startDate = new Date(now.getFullYear(), 0, 1);
@@ -92,18 +97,24 @@ serve(async (req) => {
     const topProducts = Array.from(productStats.values())
       .sort((a, b) => b.revenue - a.revenue);
 
-    // Get monthly/yearly revenue breakdown
+    // Get weekly/monthly/yearly revenue breakdown
     const revenueByPeriod = new Map<string, number>();
     orders?.forEach(order => {
       const date = new Date(order.created_at);
-      const key = period === 'month' 
-        ? date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })
-        : date.getFullYear().toString();
+      let key: string;
+      
+      if (period === 'week') {
+        key = date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' });
+      } else if (period === 'month') {
+        key = date.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+      } else {
+        key = date.getFullYear().toString();
+      }
       
       revenueByPeriod.set(key, (revenueByPeriod.get(key) || 0) + Number(order.total_amount));
     });
 
-    const monthlyRevenue = period === 'month'
+    const monthlyRevenue = period === 'week' || period === 'month'
       ? Array.from(revenueByPeriod.entries()).map(([month, revenue]) => ({ month, revenue }))
       : [];
 
