@@ -17,7 +17,7 @@ interface DashboardStats {
 export const DashboardSection = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<"month" | "year">("month");
+  const [period, setPeriod] = useState<"week" | "month" | "year">("month");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,8 +67,9 @@ export const DashboardSection = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Dashboard</h2>
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as "month" | "year")}>
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as "week" | "month" | "year")}>
           <TabsList>
+            <TabsTrigger value="week">Semaine</TabsTrigger>
             <TabsTrigger value="month">Mois</TabsTrigger>
             <TabsTrigger value="year">Année</TabsTrigger>
           </TabsList>
@@ -85,7 +86,7 @@ export const DashboardSection = () => {
           <CardContent>
             <div className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              {period === "month" ? "Ce mois-ci" : "Cette année"}
+              {period === "week" ? "Cette semaine" : period === "month" ? "Ce mois-ci" : "Cette année"}
             </p>
           </CardContent>
         </Card>
@@ -98,7 +99,7 @@ export const DashboardSection = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalOrders}</div>
             <p className="text-xs text-muted-foreground">
-              {period === "month" ? "Ce mois-ci" : "Cette année"}
+              {period === "week" ? "Cette semaine" : period === "month" ? "Ce mois-ci" : "Cette année"}
             </p>
           </CardContent>
         </Card>
@@ -111,7 +112,7 @@ export const DashboardSection = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats.newCustomers}</div>
             <p className="text-xs text-muted-foreground">
-              {period === "month" ? "Ce mois-ci" : "Cette année"}
+              {period === "week" ? "Cette semaine" : period === "month" ? "Ce mois-ci" : "Cette année"}
             </p>
           </CardContent>
         </Card>
@@ -158,7 +159,7 @@ export const DashboardSection = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {period === "month" &&
+            {(period === "week" || period === "month") &&
               stats.monthlyRevenue.map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <span className="text-sm">{item.month}</span>
