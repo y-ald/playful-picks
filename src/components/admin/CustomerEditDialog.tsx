@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +33,21 @@ export const CustomerEditDialog = ({
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    first_name: customer?.profile?.first_name || "",
-    last_name: customer?.profile?.last_name || "",
-    phone_number: customer?.profile?.phone_number || "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
   });
+
+  // Update form data when customer changes
+  useEffect(() => {
+    if (customer) {
+      setFormData({
+        first_name: customer.profile?.first_name || "",
+        last_name: customer.profile?.last_name || "",
+        phone_number: customer.profile?.phone_number || "",
+      });
+    }
+  }, [customer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
