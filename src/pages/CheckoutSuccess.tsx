@@ -2,99 +2,90 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { usePostPaymentProcessing } from "@/hooks/usePostPaymentProcessing";
 import { useCart } from "@/contexts/CartContext";
-import { Loader2 } from "lucide-react";
+import { CheckCircle, Package, Truck } from "lucide-react";
 
 export default function CheckoutSuccess() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { language } = useLanguage();
-  const { processOrder, isProcessing } = usePostPaymentProcessing();
   const { clearCart } = useCart();
-  const [isCompleted, setIsCompleted] = useState(false);
+  const [isCleared, setIsCleared] = useState(false);
 
   useEffect(() => {
-    const handlePostPaymentProcessing = async () => {
-      try {
-        // Get checkout data from session storage
-        const checkoutDataString = sessionStorage.getItem("checkout_data");
-        if (!checkoutDataString) {
-          // No checkout data found, skip post-payment processing
-          setIsCompleted(true);
-          return;
-        }
+    const handlePostPayment = async () => {
+      // Clear checkout data from session storage
+      sessionStorage.removeItem("checkout_data");
 
-        const checkoutData = JSON.parse(checkoutDataString);
-
-        // Update the language if it was stored in the checkout data
-        if (checkoutData.language && checkoutData.language !== language) {
-          // This will update the app's language context
-          navigate(`/${checkoutData.language}/checkout/success`, {
-            replace: true,
-          });
-          return; // Stop processing as we're redirecting
-        }
-
-        // Process the order (create shipping label and send emails)
-        await processOrder(checkoutData);
-
-        // Clear checkout data from session storage
-        sessionStorage.removeItem("checkout_data");
-
-        // Clear cart using the cart context (handles both DB and local state)
+      // Clear cart (Stripe webhook handles order creation, shipping label, and emails)
+      if (!isCleared) {
         await clearCart();
-
-        toast({
-          title: "Success",
-          description:
-            "Thank you for your order! You will receive a confirmation email shortly.",
-        });
-
-        setIsCompleted(true);
-      } catch (error) {
-        console.error("Error processing order:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description:
-            "There was an issue processing your order. Our team has been notified.",
-        });
-        setIsCompleted(true);
+        setIsCleared(true);
       }
     };
 
-    handlePostPaymentProcessing();
-  }, [toast, processOrder]);
-
-  if (!isCompleted) {
-    return (
-      <div className="container mx-auto p-4">
-        <Card className="max-w-md mx-auto p-6 text-center">
-          <h1 className="text-2xl font-bold mb-4">Processing Your Order</h1>
-          <div className="flex justify-center mb-6">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <p className="text-muted-foreground mb-6">
-            Please wait while we process your order...
-          </p>
-        </Card>
-      </div>
-    );
-  }
+    handlePostPayment();
+  }, [clearCart, isCleared]);
 
   return (
-    <div className="container mx-auto p-4">
-      <Card className="max-w-md mx-auto p-6 text-center">
-        <h1 className="text-2xl font-bold mb-4">Order Confirmed!</h1>
-        <p className="text-muted-foreground mb-6">
-          Thank you for your purchase. We've sent you an email with your order
-          details and tracking information.
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+      <Card className="max-w-lg w-full p-8 text-center space-y-6">
+        {/* Success Icon */}
+        <div className="flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 bg-green-500/20 rounded-full blur-xl animate-pulse" />
+            <div className="relative bg-green-500 rounded-full p-4">
+              <CheckCircle className="h-12 w-12 text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Title */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            {language === "fr" ? "Commande confirmée!" : "Order Confirmed!"}
+          </h1>
+          <p className="text-muted-foreground">
+            {language === "fr"
+              ? "Merci pour votre achat"
+              : "Thank you for your purchase"}
+          </p>
+        </div>
+
+        {/* Order Info */}
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <Package className="h-5 w-5 text-primary" />
+            <span>
+              {language === "fr"
+                ? "Votre commande est en cours de préparation"
+                : "Your order is being prepared"}
+            </span>
+          </div>
+          <div className="flex items-center justify-center gap-3 text-sm">
+            <Truck className="h-5 w-5 text-primary" />
+            <span>
+              {language === "fr"
+                ? "Vous recevrez un email avec les détails de suivi"
+                : "You'll receive an email with tracking details"}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <p className="text-muted-foreground text-sm">
+          {language === "fr"
+            ? "Un email de confirmation avec les informations de suivi vous sera envoyé sous peu."
+            : "A confirmation email with tracking information will be sent to you shortly."}
         </p>
-        <Button onClick={() => navigate(`/${language}/shop`)}>
-          Continue Shopping
+
+        {/* CTA Button */}
+        <Button
+          onClick={() => navigate(`/${language}/shop`)}
+          size="lg"
+          className="w-full"
+        >
+          {language === "fr" ? "Continuer vos achats" : "Continue Shopping"}
         </Button>
       </Card>
     </div>
