@@ -21,6 +21,7 @@ interface Product {
   image_url: string | null;
   additional_images?: string[];
   description?: string | null;
+  stock_quantity?: number | null;
 }
 
 interface ProductCardProps {
@@ -177,8 +178,11 @@ const OptimizedProductCard = memo(({ product }: ProductCardProps) => {
       <Button
         onClick={handleAddToCart}
         className="w-full bg-primary hover:bg-primary-hover text-white"
+        disabled={product.stock_quantity !== null && product.stock_quantity !== undefined && product.stock_quantity <= 0}
       >
-        {translations?.shop?.addToCart || "Add to Cart"}
+        {product.stock_quantity !== null && product.stock_quantity !== undefined && product.stock_quantity <= 0 
+          ? (translations?.shop?.outOfStock || "Out of Stock")
+          : (translations?.shop?.addToCart || "Add to Cart")}
       </Button>
     </div>
   );
