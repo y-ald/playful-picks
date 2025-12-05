@@ -143,5 +143,17 @@
     "remove": "Supprimer",
     "continueShopping": "Continuer les achats",
     "price": "Prix"
+  },
+  "footer": {
+    "description": "Des vêtements et accessoires de qualité pour les enfants, conçus avec amour et attention aux détails.",
+    "information": "Informations",
+    "terms": "Conditions de vente",
+    "privacy": "Politique de confidentialité",
+    "legal": "Mentions légales",
+    "contact": "Contact",
+    "contactForm": "Formulaire de contact",
+    "copyright": "Tous droits réservés.",
+    "securePayment": "Paiement sécurisé",
+    "fastDelivery": "Livraison rapide"
   }
 }
