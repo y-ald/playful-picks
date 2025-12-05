@@ -143,5 +143,17 @@
     "remove": "Remove",
     "continueShopping": "Continue Shopping",
     "price": "Price"
+  },
+  "footer": {
+    "description": "Quality clothing and accessories for children, designed with love and attention to detail.",
+    "information": "Information",
+    "terms": "Terms of Sale",
+    "privacy": "Privacy Policy",
+    "legal": "Legal Notice",
+    "contact": "Contact",
+    "contactForm": "Contact Form",
+    "copyright": "All rights reserved.",
+    "securePayment": "Secure Payment",
+    "fastDelivery": "Fast Delivery"
   }
 }

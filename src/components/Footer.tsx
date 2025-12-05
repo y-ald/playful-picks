@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Footer = () => {
   const { lang = 'fr' } = useParams<{ lang: string }>();
+  const { translations } = useLanguage();
+  const t = translations.footer || {};
 
   return (
     <footer className="relative bg-gradient-to-br from-background via-secondary/20 to-background mt-32 border-t border-border/50 overflow-hidden">
@@ -21,8 +24,7 @@ export const Footer = () => {
               className="h-16 w-auto brightness-110 hover:scale-105 transition-transform duration-300"
             />
             <p className="text-muted-foreground max-w-md text-base leading-relaxed">
-              Des vêtements et accessoires de qualité pour les enfants, 
-              conçus avec amour et attention aux détails.
+              {t.description || "Des vêtements et accessoires de qualité pour les enfants, conçus avec amour et attention aux détails."}
             </p>
             <div className="flex gap-3">
               <a 
@@ -49,7 +51,7 @@ export const Footer = () => {
           {/* Informations légales */}
           <div className="space-y-6">
             <h3 className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Informations
+              {t.information || "Informations"}
             </h3>
             <ul className="space-y-3">
               <li>
@@ -58,7 +60,7 @@ export const Footer = () => {
                   className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-primary group-hover:scale-125 transition-all"></span>
-                  Conditions de vente
+                  {t.terms || "Conditions de vente"}
                 </Link>
               </li>
               <li>
@@ -67,7 +69,7 @@ export const Footer = () => {
                   className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-primary group-hover:scale-125 transition-all"></span>
-                  Politique de confidentialité
+                  {t.privacy || "Politique de confidentialité"}
                 </Link>
               </li>
               <li>
@@ -76,7 +78,7 @@ export const Footer = () => {
                   className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-2 group"
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/50 group-hover:bg-primary group-hover:scale-125 transition-all"></span>
-                  Mentions légales
+                  {t.legal || "Mentions légales"}
                 </Link>
               </li>
             </ul>
@@ -85,7 +87,7 @@ export const Footer = () => {
           {/* Contact */}
           <div className="space-y-6">
             <h3 className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Contact
+              {t.contact || "Contact"}
             </h3>
             <ul className="space-y-4">
               <li className="text-muted-foreground flex items-start gap-3 group">
@@ -102,7 +104,7 @@ export const Footer = () => {
                   <svg className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
-                  Formulaire de contact
+                  {t.contactForm || "Formulaire de contact"}
                 </Link>
               </li>
             </ul>
@@ -113,20 +115,20 @@ export const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-              &copy; {new Date().getFullYear()} Kaia Kids. Tous droits réservés.
+              &copy; {new Date().getFullYear()} Kaia Kids. {t.copyright || "Tous droits réservés."}
             </p>
             <div className="flex items-center gap-8 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                 </svg>
-                <span>Paiement sécurisé</span>
+                <span>{t.securePayment || "Paiement sécurisé"}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
                 </svg>
-                <span>Livraison rapide</span>
+                <span>{t.fastDelivery || "Livraison rapide"}</span>
               </div>
             </div>
           </div>
