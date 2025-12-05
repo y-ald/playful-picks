@@ -153,6 +153,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = useCallback(
     async (productId: string, quantity: number = 1) => {
       try {
+        // Check stock availability first
+        const { data: product, error: productError } = await supabase
+          .from("products")
+          .select("stock_quantity, name")
+          .eq("id", productId)
+          .single();
+
+        if (productError) {
+          console.error("Error fetching product:", productError);
+          throw productError;
+        }
+
+        if (!product || (product.stock_quantity !== null && product.stock_quantity <= 0)) {
+          toast({
+            variant: "destructive",
+            title: "Out of Stock",
+            description: `${product?.name || "This product"} is currently out of stock`,
+          });
+          return;
+        }
+
         if (isAuthenticated && userInfo) {
           // Use userInfo from context instead of making a separate API call
           const { data: existingItem, error: fetchError } = await supabase
@@ -165,6 +186,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           if (fetchError) {
             console.error("Error fetching cart item:", fetchError);
             throw fetchError;
+          }
+
+          // Check if adding more would exceed stock
+          const currentQty = existingItem?.quantity || 0;
+          if (product.stock_quantity !== null && currentQty + quantity > product.stock_quantity) {
+            toast({
+              variant: "destructive",
+              title: "Insufficient Stock",
+              description: `Only ${product.stock_quantity} items available`,
+            });
+            return;
           }
 
           if (existingItem) {
@@ -204,6 +236,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           const existingItemIndex = storedCart.findIndex(
             (item) => item.product_id === productId
           );
+          
+          // Check if adding more would exceed stock
+          const currentQty = existingItemIndex !== -1 ? storedCart[existingItemIndex].quantity : 0;
+          if (product.stock_quantity !== null && currentQty + quantity > product.stock_quantity) {
+            toast({
+              variant: "destructive",
+              title: "Insufficient Stock",
+              description: `Only ${product.stock_quantity} items available`,
+            });
+            return;
+          }
+
           let updatedCart;
 
           if (existingItemIndex !== -1) {

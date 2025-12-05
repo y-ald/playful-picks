@@ -39,7 +39,17 @@ const ProductDetails = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const isOutOfStock = product?.stock_quantity !== null && product?.stock_quantity !== undefined && product.stock_quantity <= 0;
+
   const addToCartHandler = async () => {
+    if (isOutOfStock) {
+      toast({
+        title: "Out of Stock",
+        description: "This product is currently unavailable",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await addToCart(id);
       toast({
@@ -180,10 +190,17 @@ const ProductDetails = () => {
               <p className="text-gray-600">Age: {product.age_range}</p>
             )}
             <p className="text-gray-700">{product.description}</p>
+            {isOutOfStock && (
+              <p className="text-destructive font-medium">Out of Stock</p>
+            )}
             <div className="flex gap-4">
-              <Button onClick={addToCartHandler} className="flex-1">
+              <Button 
+                onClick={addToCartHandler} 
+                className="flex-1"
+                disabled={isOutOfStock}
+              >
                 <ShoppingCart className="mr-2 h-4 w-4" />
-                {translations?.shop?.addToCart || "Add to Cart"}
+                {isOutOfStock ? "Out of Stock" : (translations?.shop?.addToCart || "Add to Cart")}
               </Button>
               <Button variant="outline" onClick={toggleFavorite}>
                 <Heart
