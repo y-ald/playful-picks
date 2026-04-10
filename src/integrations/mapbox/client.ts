@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoieWFsZCIsImEiOiJjbTd2bDJ4eTkwMHk4MmtyMWw0ODFqN3JuIn0.qGvFfHpYvGkrY0w4KPK9eQ'; // Replace with your Mapbox access token
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN as string;
+
+if (!MAPBOX_ACCESS_TOKEN) {
+  console.warn("Missing VITE_MAPBOX_ACCESS_TOKEN environment variable.");
+}
 
 export const mapboxClient = {
   forward: async (query: string, language: string, country: string) => {

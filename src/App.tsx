@@ -11,21 +11,17 @@ import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import AppRoutes from "./AppRoutes";
 
-/**
- * Main application component
- * Sets up providers and global state management
- */
-function App() {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        staleTime: 5 * 60 * 1000, // 5 minutes default stale time
-        retry: 1, // Limit retries
-      },
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
     },
-  });
+  },
+});
 
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

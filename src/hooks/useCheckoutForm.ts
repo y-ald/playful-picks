@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -7,6 +7,7 @@ import { mapboxClient } from "@/integrations/mapbox/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { calculateParcelSize } from "@/lib/calculateParcelSize";
+import { debounce } from "@/lib/utils";
 
 // Define the form schema with country-specific validations
 export const createFormSchema = (country: string) => {
@@ -137,8 +138,7 @@ export const useCheckoutForm = (cartItems: any[]) => {
     [form]
   );
 
-  // Search for addresses using Mapbox
-  const handleAddressSearch = useCallback(
+  const searchAddress = useCallback(
     async (query: string, country: string) => {
       if (query.length < 3) {
         setSearchResults([]);
@@ -146,15 +146,19 @@ export const useCheckoutForm = (cartItems: any[]) => {
       }
 
       try {
-        // The mapboxClient.forward function expects 3 arguments: query, language, and country
         const results = await mapboxClient.forward(query, "en", country);
-        setSearchResults(results.slice(0, 5)); // Limit to 5 results
+        setSearchResults(results.slice(0, 5));
       } catch (error) {
         console.error("Error searching address:", error);
         setSearchResults([]);
       }
     },
-    [form]
+    []
+  );
+
+  const handleAddressSearch = useMemo(
+    () => debounce((query: string, country: string) => searchAddress(query, country), 300),
+    [searchAddress]
   );
 
   // Handle address selection from search results

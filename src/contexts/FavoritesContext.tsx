@@ -52,7 +52,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const [clientId, setClientId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userInfo } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -79,25 +79,18 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const fetchFavorites = useCallback(async () => {
     setIsLoading(true);
     try {
-      if (isAuthenticated) {
-        // Fetch favorites from the database for authenticated users
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      if (isAuthenticated && userInfo) {
+        const { data, error } = await supabase
+          .from("favorites")
+          .select("*, product:products(*)")
+          .eq("user_id", userInfo.id);
 
-        if (user) {
-          const { data, error } = await supabase
-            .from("favorites")
-            .select("*, product:products(*)")
-            .eq("user_id", user.id);
-
-          if (error) {
-            console.error("Error fetching favorites:", error);
-            return;
-          }
-
-          setFavorites(data || []);
+        if (error) {
+          console.error("Error fetching favorites:", error);
+          return;
         }
+
+        setFavorites(data || []);
       } else if (clientId) {
         // Fetch favorites for anonymous users
         const { data, error } = await supabase
@@ -122,7 +115,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, clientId, toast]);
+  }, [isAuthenticated, userInfo, clientId, toast]);
 
   // Initial fetch
   useEffect(() => {
@@ -133,97 +126,65 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
 
   // Set up real-time subscription for authenticated users
   useEffect(() => {
-    if (isAuthenticated) {
-      const setupSubscription = async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) return;
-
-        const channel = supabase
-          .channel("favorites-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "favorites",
-              filter: `user_id=eq.${user.id}`,
-            },
-            () => {
-              fetchFavorites();
-              queryClient.invalidateQueries({ queryKey: ["favorites"] });
-            }
-          )
-          .subscribe();
-
-        return () => {
-          supabase.removeChannel(channel);
-        };
-      };
-
-      const unsubscribe = setupSubscription();
+    if (isAuthenticated && userInfo) {
+      const channel = supabase
+        .channel("favorites-changes")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "favorites",
+            filter: `user_id=eq.${userInfo.id}`,
+          },
+          () => {
+            fetchFavorites();
+            queryClient.invalidateQueries({ queryKey: ["favorites"] });
+          }
+        )
+        .subscribe();
 
       return () => {
-        if (unsubscribe) {
-          unsubscribe.then((fn) => fn && fn());
-        }
+        supabase.removeChannel(channel);
       };
     }
-  }, [isAuthenticated, fetchFavorites, queryClient]);
+  }, [isAuthenticated, userInfo, fetchFavorites, queryClient]);
 
   // Add to favorites
   const addToFavorites = useCallback(
     async (productId: string) => {
       try {
-        if (isAuthenticated) {
-          // Add to database for authenticated users
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
+        if (isAuthenticated && userInfo) {
+          const { data: existingFavorite, error: checkError } = await supabase
+            .from("favorites")
+            .select("id")
+            .eq("user_id", userInfo.id)
+            .eq("product_id", productId)
+            .maybeSingle();
 
-          if (user) {
-            // Check if already in favorites
-            const { data: existingFavorite, error: checkError } = await supabase
-              .from("favorites")
-              .select("id")
-              .eq("user_id", user.id)
-              .eq("product_id", productId)
-              .maybeSingle();
-
-            if (checkError) {
-              console.error("Error checking favorite:", checkError);
-              throw checkError;
-            }
-
-            if (existingFavorite) {
-              // Already in favorites
-              toast({
-                title: "Already in favorites",
-                description: "This item is already in your favorites",
-              });
-              return;
-            }
-
-            // Add to favorites
-            const { error: insertError } = await supabase
-              .from("favorites")
-              .insert([
-                {
-                  user_id: user.id,
-                  product_id: productId,
-                },
-              ]);
-
-            if (insertError) {
-              console.error("Error adding to favorites:", insertError);
-              throw insertError;
-            }
-
-            // Fetch updated favorites
-            fetchFavorites();
+          if (checkError) {
+            console.error("Error checking favorite:", checkError);
+            throw checkError;
           }
+
+          if (existingFavorite) {
+            toast({
+              title: "Already in favorites",
+              description: "This item is already in your favorites",
+            });
+            return;
+          }
+
+          const { error: insertError } = await supabase
+            .from("favorites")
+            .insert([{ user_id: userInfo.id, product_id: productId }]);
+
+          if (insertError) {
+            console.error("Error adding to favorites:", insertError);
+            throw insertError;
+          }
+
+          fetchFavorites();
         } else if (clientId) {
           // Add to database for anonymous users
           // Check if already in favorites
@@ -281,34 +242,25 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [isAuthenticated, clientId, fetchFavorites, toast]
+    [isAuthenticated, userInfo, clientId, fetchFavorites, toast]
   );
 
-  // Remove from favorites
   const removeFromFavorites = useCallback(
     async (productId: string) => {
       try {
-        if (isAuthenticated) {
-          // Remove from database for authenticated users
-          const {
-            data: { user },
-          } = await supabase.auth.getUser();
+        if (isAuthenticated && userInfo) {
+          const { error } = await supabase
+            .from("favorites")
+            .delete()
+            .eq("user_id", userInfo.id)
+            .eq("product_id", productId);
 
-          if (user) {
-            const { error } = await supabase
-              .from("favorites")
-              .delete()
-              .eq("user_id", user.id)
-              .eq("product_id", productId);
-
-            if (error) {
-              console.error("Error removing from favorites:", error);
-              throw error;
-            }
-
-            // Fetch updated favorites
-            fetchFavorites();
+          if (error) {
+            console.error("Error removing from favorites:", error);
+            throw error;
           }
+
+          fetchFavorites();
         } else if (clientId) {
           // Remove from database for anonymous users
           const { error } = await supabase
@@ -340,7 +292,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
     },
-    [isAuthenticated, clientId, fetchFavorites, toast]
+    [isAuthenticated, userInfo, clientId, fetchFavorites, toast]
   );
 
   // Check if product is in favorites
@@ -354,22 +306,15 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   // Clear all favorites
   const clearFavorites = useCallback(async () => {
     try {
-      if (isAuthenticated) {
-        // Clear database favorites for authenticated users
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      if (isAuthenticated && userInfo) {
+        const { error } = await supabase
+          .from("favorites")
+          .delete()
+          .eq("user_id", userInfo.id);
 
-        if (user) {
-          const { error } = await supabase
-            .from("favorites")
-            .delete()
-            .eq("user_id", user.id);
-
-          if (error) {
-            console.error("Error clearing favorites:", error);
-            throw error;
-          }
+        if (error) {
+          console.error("Error clearing favorites:", error);
+          throw error;
         }
       } else if (clientId) {
         // Clear database favorites for anonymous users
@@ -400,7 +345,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
       });
       throw error;
     }
-  }, [isAuthenticated, clientId, toast]);
+  }, [isAuthenticated, userInfo, clientId, toast]);
 
   // Context value
   const value = useMemo(

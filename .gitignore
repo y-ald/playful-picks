@@ -23,3 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp
+
+# Vite timestamp cache
+vite.config.ts.timestamp-*.mjs
+
+# Environment variables
+.env
+.env.local
+.env.*.local

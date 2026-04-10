@@ -1,6 +1,7 @@
 import { fetchWithTimeout } from "./utils.ts";
 
 const SHIPPO_API_KEY = Deno.env.get("SHIPPO_API_KEY") || "";
+if (!SHIPPO_API_KEY) console.error("SHIPPO_API_KEY is not set - shipping operations will fail");
 
 const SHIPPO_API_URL = "https://api.goshippo.com";
 

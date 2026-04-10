@@ -1,0 +1,184 @@
+---
+description: Mapbox Search Box API v1 reference - endpoints, parameters, and response shapes used for address autocomplete and geocoding
+globs: src/integrations/mapbox/**,src/components/*Shipping*,src/components/*Address*,src/components/account/Address*
+alwaysApply: false
+---
+
+# Mapbox Search Box API v1 Reference
+
+Base URL: `https://api.mapbox.com/search/searchbox/v1`
+Docs: https://docs.mapbox.com/api/search/search-box/
+
+## Project Usage
+
+- Client: `src/integrations/mapbox/client.ts`
+- Uses `/forward` for text search and `/retrieve/{id}` for feature details
+- Called via `axios` from the browser
+- Token: hardcoded public Mapbox access token
+
+## Endpoints Overview
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/suggest` | GET | Autocomplete suggestions (use with `/retrieve`) |
+| `/retrieve/{mapbox_id}` | GET | Get full feature details for a suggestion |
+| `/forward` | GET | One-shot text search with coordinates |
+| `/reverse` | GET | Reverse geocoding (coordinates → address) |
+| `/category` | GET | Search by POI category |
+
+## /forward - Text Search (USED IN PROJECT)
+
+`GET /search/searchbox/v1/forward?q={search_text}`
+
+### Required Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `q` | string | Search query (max 256 chars) |
+| `access_token` | string | Mapbox access token |
+
+### Optional Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `language` | string | ISO language code (default: en) |
+| `limit` | integer | Max results (up to 10) |
+| `proximity` | string | `ip` or `longitude,latitude` to bias results |
+| `bbox` | string | Bounding box: `minLon,minLat,maxLon,maxLat` |
+| `country` | string | Comma-separated ISO 3166 alpha-2 codes |
+| `types` | string | Filter: `country,region,postcode,district,place,city,locality,neighborhood,street,address,poi,category` |
+| `poi_category` | string | Filter POI by category |
+| `auto_complete` | string | `true` to enable partial/fuzzy matching |
+
+### Response Shape
+
+```typescript
+interface ForwardResponse {
+  type: "FeatureCollection";
+  features: Feature[];
+  attribution: string;
+}
+
+interface Feature {
+  type: "Feature";
+  geometry: {
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+  properties: {
+    name: string;
+    mapbox_id: string;
+    feature_type: string; // "poi" | "address" | "place" | "region" | "country" | etc.
+    address?: string;
+    full_address?: string;
+    place_formatted?: string;
+    context: FeatureContext;
+    coordinates: {
+      longitude: number;
+      latitude: number;
+      accuracy?: string; // "rooftop" | "parcel" | "point" | "interpolated" | "approximate"
+      routable_points?: Array<{ name: string; latitude: number; longitude: number }>;
+    };
+    language?: string;
+    maki?: string;
+    poi_category?: string[];
+    external_ids?: Record<string, string>;
+    metadata?: Record<string, any>;
+  };
+}
+```
+
+## /retrieve/{id} - Feature Details (USED IN PROJECT)
+
+`GET /search/searchbox/v1/retrieve/{mapbox_id}`
+
+### Required Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `access_token` | string | Mapbox access token |
+| `session_token` | string | UUIDv4 (must match preceding /suggest calls) |
+
+### Response
+
+Same `FeatureCollection` shape as `/forward`. Returns full feature with coordinates.
+
+## /suggest - Autocomplete Suggestions
+
+`GET /search/searchbox/v1/suggest?q={search_text}`
+
+### Required Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `q` | string | Search query (max 256 chars) |
+| `access_token` | string | Mapbox access token |
+| `session_token` | string | UUIDv4 for billing session grouping |
+
+### Key Optional Parameters
+
+Same as `/forward` plus: `proximity`, `bbox`, `country`, `types`, `poi_category`, `limit`
+
+### Response Shape (no coordinates - use /retrieve to get them)
+
+```typescript
+interface SuggestResponse {
+  suggestions: Suggestion[];
+  attribution: string;
+}
+
+interface Suggestion {
+  name: string;
+  mapbox_id: string;           // use with /retrieve
+  feature_type: string;
+  address?: string;
+  full_address?: string;
+  place_formatted: string;
+  context: FeatureContext;
+  language: string;
+  maki?: string;
+  poi_category?: string[];
+  distance?: number;           // meters from proximity/origin
+  eta?: number;                // minutes (if eta_type enabled)
+}
+```
+
+## /reverse - Reverse Geocoding
+
+`GET /search/searchbox/v1/reverse?longitude={lon}&latitude={lat}`
+
+### Required Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `longitude` | number | Longitude coordinate |
+| `latitude` | number | Latitude coordinate |
+| `access_token` | string | Mapbox access token |
+
+### Optional: `language`, `limit`, `types`, `country`
+
+## Context Object (shared across all endpoints)
+
+```typescript
+interface FeatureContext {
+  country?: { id: string; name: string; country_code: string; country_code_alpha_3: string };
+  region?: { id: string; name: string; region_code: string; region_code_full: string };
+  postcode?: { id: string; name: string };
+  district?: { id: string; name: string };
+  place?: { id: string; name: string };
+  locality?: { id: string; name: string };
+  neighborhood?: { id: string; name: string };
+  address?: { id: string; name: string; address_number: string; street_name: string };
+  street?: { id: string; name: string };
+}
+```
+
+## Administrative Unit Types
+
+`country` > `region` > `postcode` > `district` > `place` > `city` > `locality` > `neighborhood` > `street` > `address` > `poi` > `category`
+
+## Billing Notes
+
+- `/suggest` + `/retrieve` are billed as a session (group via `session_token`)
+- `/forward` is billed per request
+- ETA calculations incur Matrix API costs per result

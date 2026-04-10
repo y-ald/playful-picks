@@ -1,6 +1,5 @@
-
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useRef } from 'react';
 import ProductCard from './ProductCard';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,12 +42,12 @@ const NewArrivals = () => {
         <h2 className="text-2xl font-bold">
           {translations?.home?.newArrivals?.title || "New Arrivals"}
         </h2>
-        <a 
-          href={`/${language}/shop`} 
+        <Link 
+          to={`/${language}/shop`} 
           className="text-primary hover:underline"
         >
           {translations?.home?.newArrivals?.viewAll || "View All"}
-        </a>
+        </Link>
       </div>
       
       <Carousel

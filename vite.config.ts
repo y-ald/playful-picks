@@ -58,7 +58,6 @@ export default defineConfig(({ mode }) => ({
       'framer-motion',
       'lucide-react'
     ],
-    // Force the optimizer to also process listed dependencies
-    force: true,
+    force: false,
   }
 }));

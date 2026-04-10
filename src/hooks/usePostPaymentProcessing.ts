@@ -13,10 +13,29 @@ interface ShippingAddress {
   country: string;
 }
 
+interface CartItem {
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    image_url?: string | null;
+  };
+  quantity: number;
+}
+
+interface ShippingRate {
+  object_id: string;
+  provider: string;
+  servicelevel: { name: string };
+  amount: string | number;
+  estimated_days: number;
+  tracking_url_provider?: string;
+}
+
 interface PostPaymentProcessingOptions {
-  cartItems: any[];
+  cartItems: CartItem[];
   shippingAddress: ShippingAddress;
-  shippingRate: any;
+  shippingRate: ShippingRate;
   orderReference?: string;
 }
 
@@ -67,7 +86,7 @@ export const usePostPaymentProcessing = () => {
           "send-email",
           {
             body: {
-              to: "hpaulfernand@yahoo.com",
+              to: import.meta.env.VITE_ADMIN_EMAIL,
               subject: `New Order: ${labelData.order_reference}`,
               html: `
                 <h1>New Order: ${labelData.order_reference}</h1>
