@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending email to:", to);
 
     const emailResponse = await resend.emails.send({
-      from: "Kaia Kids <onboarding@resend.dev>",
+      from: Deno.env.get("RESEND_FROM_EMAIL") || "Kaia Kids <onboarding@resend.dev>",
       to: [to],
       subject,
       html,

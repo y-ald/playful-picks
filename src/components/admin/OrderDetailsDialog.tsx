@@ -136,8 +136,8 @@ export const OrderDetailsDialog = ({
             
             <div className="bg-muted/50 p-4 rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Paiement</p>
-              <Badge variant={order.payment_status === "paid" ? "default" : "outline"}>
-                {order.payment_status === "paid" ? "✓ Payé" : order.payment_status}
+              <Badge variant={order.payment_status === "succeeded" || order.payment_status === "paid" ? "default" : "outline"}>
+                {order.payment_status === "succeeded" || order.payment_status === "paid" ? "✓ Payé" : order.payment_status}
               </Badge>
             </div>
           </div>

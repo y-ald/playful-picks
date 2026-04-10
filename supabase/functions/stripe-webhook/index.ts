@@ -24,7 +24,7 @@ serve(async (req) => {
 
   try {
     const body = await req.text();
-    const event = stripe.webhooks.constructEvent(
+    const event = await stripe.webhooks.constructEventAsync(
       body,
       signature,
       webhookSecret || ""
@@ -96,7 +96,7 @@ serve(async (req) => {
         user_id: session.client_reference_id || null,
         total_amount: (session.amount_total || 0) / 100,
         status: "processing",
-        payment_status: "paid",
+        payment_status: "succeeded",
         stripe_payment_id: session.payment_intent as string,
         stripe_checkout_session_id: session.id,
         shipping_address: JSON.stringify(shippingDetails || {}),
