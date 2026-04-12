@@ -101,7 +101,30 @@
     "name": "Nom complet",
     "createAccount": "Créer un compte",
     "alreadyHaveAccount": "Vous avez déjà un compte ? Connectez-vous",
-    "dontHaveAccount": "Vous n'avez pas de compte ? Inscrivez-vous"
+    "dontHaveAccount": "Vous n'avez pas de compte ? Inscrivez-vous",
+    "emailOrPhone": "Email ou téléphone",
+    "emailOrPhonePlaceholder": "nom@email.com ou +1 514...",
+    "continue": "Continuer",
+    "back": "Retour",
+    "or": "ou",
+    "magicLink": "Recevoir un lien magique",
+    "magicLinkSent": "Vérifiez votre email",
+    "magicLinkDescription": "Nous avons envoyé un lien de connexion à votre adresse email. Cliquez dessus pour vous connecter instantanément.",
+    "verifyCode": "Vérifier le code",
+    "resendCode": "Renvoyer le code",
+    "codeSent": "Code envoyé !",
+    "linkSent": "Lien envoyé !",
+    "accountCreated": "Compte créé !",
+    "checkEmail": "Vérifiez votre email pour confirmer votre compte.",
+    "passwordWeak": "Mot de passe trop faible",
+    "passwordRequirements": "Veuillez respecter tous les critères de sécurité.",
+    "strengthWeak": "Faible",
+    "strengthMedium": "Moyen",
+    "strengthStrong": "Fort",
+    "detected": {
+      "email": "Email",
+      "phone": "Téléphone"
+    }
   },
   "cart": {
     "title": "Panier",
