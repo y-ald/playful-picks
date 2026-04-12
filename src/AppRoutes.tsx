@@ -14,6 +14,7 @@ import Contact from './pages/Contact';
 import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/account/ProfilePage';
 import AddressesPage from './pages/account/AddressesPage';
+import OrdersPage from './pages/account/OrdersPage';
 import AdminPage from './pages/account/AdminPage';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
