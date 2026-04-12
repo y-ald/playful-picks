@@ -69,12 +69,7 @@ export default function ImprovedShippingForm({
     [fetchShippingRates, onFormSubmit]
   );
 
-  // Prefill email if user is authenticated
-  useEffect(() => {
-    if (userInfo?.email) {
-      form.setValue("email", userInfo.email);
-    }
-  }, [userInfo, form]);
+  // Email is now prefilled via useCheckoutForm
 
   return (
     <Form {...form}>
@@ -113,6 +108,25 @@ export default function ImprovedShippingForm({
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input
+                  type="tel"
+                  placeholder="+1 234 567 8900"
+                  {...field}
+                  className="text-lg"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}

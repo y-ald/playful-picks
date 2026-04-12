@@ -128,6 +128,8 @@ serve(async (req) => {
       metadata: {
         ...metadata,
         shipping_name: shippingAddress.name,
+        shipping_email: shippingAddress.email,
+        shipping_phone: shippingAddress.phone || "",
         shipping_address: shippingAddress.address,
         shipping_city: shippingAddress.city,
         shipping_state: shippingAddress.state,

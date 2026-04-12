@@ -24,6 +24,7 @@ interface ShippingRate {
 interface ShippingFormValues {
   name: string;
   email: string;
+  phone?: string;
   address: string;
   city: string;
   state: string;

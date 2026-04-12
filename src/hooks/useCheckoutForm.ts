@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -11,15 +11,15 @@ import { debounce } from "@/lib/utils";
 
 // Define the form schema with country-specific validations
 export const createFormSchema = (country: string) => {
-  // Base schema with zipCode included
   const schema: Record<string, any> = {
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
+    phone: z.string().optional(),
     address: z.string().min(5, "Address must be at least 5 characters"),
     city: z.string().min(2, "City must be at least 2 characters"),
     state: z.string().min(2, "State/Province must be at least 2 characters"),
     country: z.string().min(2, "Country must be at least 2 characters"),
-    zipCode: z.string().min(5, "Postal code must be at least 5 characters"), // Default validation
+    zipCode: z.string().min(5, "Postal code must be at least 5 characters"),
     shipping_rate: z.string().optional(),
   };
 
@@ -92,13 +92,13 @@ export const useCheckoutForm = (cartItems: any[]) => {
   const [isCalculatingRates, setIsCalculatingRates] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("CA"); // Default to Canada
 
-  // Create form with dynamic schema based on selected country
   const formSchema = createFormSchema(selectedCountry);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       email: userInfo?.email || "",
+      phone: "",
       address: "",
       city: "",
       state: "",
@@ -110,21 +110,59 @@ export const useCheckoutForm = (cartItems: any[]) => {
 
   // Update form schema when country changes
   useEffect(() => {
-    const newSchema = createFormSchema(selectedCountry);
     form.clearErrors("zipCode");
-
-    // We can't directly update the resolver, so we'll recreate the form
-    // This is a workaround for the TypeScript error
-    // In a real application, you might want to use a more elegant solution
     const currentValues = form.getValues();
     form.reset(currentValues);
   }, [selectedCountry, form]);
 
-  // Autofill email when user is authenticated
+  // Pre-fill from profile + default address when user is authenticated
+  const prefilled = useRef(false);
   useEffect(() => {
-    if (userInfo?.email) {
-      form.setValue("email", userInfo.email);
-    }
+    if (!userInfo?.id || prefilled.current) return;
+
+    const prefillFromProfile = async () => {
+      try {
+        const [profileRes, addressRes] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", userInfo.id).single(),
+          supabase
+            .from("user_addresses")
+            .select("*")
+            .eq("user_id", userInfo.id)
+            .eq("is_default", true)
+            .maybeSingle(),
+        ]);
+
+        const profile = profileRes.data;
+        const address = addressRes.data;
+
+        if (profile) {
+          const fullName = [profile.first_name, profile.last_name].filter(Boolean).join(" ");
+          if (fullName) form.setValue("name", fullName);
+          if (profile.phone_number) form.setValue("phone", profile.phone_number);
+        }
+
+        if (userInfo.email) {
+          form.setValue("email", userInfo.email);
+        }
+
+        if (address) {
+          form.setValue("address", address.street_address);
+          form.setValue("city", address.city);
+          form.setValue("state", address.state);
+          form.setValue("zipCode", address.postal_code);
+          if (address.country) {
+            form.setValue("country", address.country);
+            setSelectedCountry(address.country);
+          }
+        }
+
+        prefilled.current = true;
+      } catch (err) {
+        console.error("Error prefilling checkout form:", err);
+      }
+    };
+
+    prefillFromProfile();
   }, [userInfo, form]);
 
   // Handle country change

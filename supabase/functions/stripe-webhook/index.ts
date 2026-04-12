@@ -112,6 +112,117 @@ serve(async (req) => {
 
       console.log("Order created successfully:", orderIdText);
 
+      // --- ENSURE USER EXISTS & LINK ORDER ---
+      let effectiveUserId = session.client_reference_id || null;
+
+      if (!effectiveUserId && customerEmail) {
+        try {
+          // Check if a user with this email already exists
+          const { data: existingUsers } = await supabase.auth.admin.listUsers();
+          const existingUser = existingUsers?.users?.find(
+            (u: any) => u.email?.toLowerCase() === customerEmail.toLowerCase()
+          );
+
+          if (existingUser) {
+            effectiveUserId = existingUser.id;
+            console.log("Found existing user for email:", customerEmail, effectiveUserId);
+          } else {
+            // Create a new user with a random password (they can reset via magic link)
+            const tempPassword = crypto.randomUUID();
+            const { data: newUser, error: createUserError } = await supabase.auth.admin.createUser({
+              email: customerEmail,
+              password: tempPassword,
+              email_confirm: true,
+              user_metadata: {
+                first_name: shippingDetails?.name?.split(" ")[0] || "",
+                last_name: shippingDetails?.name?.split(" ").slice(1).join(" ") || "",
+              },
+            });
+
+            if (createUserError) {
+              console.error("Error creating user:", createUserError);
+            } else if (newUser?.user) {
+              effectiveUserId = newUser.user.id;
+              console.log("Created new user:", customerEmail, effectiveUserId);
+
+              // Create profile for the new user
+              const nameParts = (shippingDetails?.name || "").split(" ");
+              await supabase.from("profiles").upsert({
+                id: effectiveUserId,
+                first_name: nameParts[0] || null,
+                last_name: nameParts.slice(1).join(" ") || null,
+                phone_number: metadata.shipping_phone || null,
+              });
+            }
+          }
+
+          // Link the order to the user
+          if (effectiveUserId) {
+            await supabase
+              .from("orders")
+              .update({ user_id: effectiveUserId })
+              .eq("id", orderIdText);
+            console.log("Order linked to user:", effectiveUserId);
+          }
+        } catch (userError) {
+          console.error("Error in user creation/linking:", userError);
+        }
+      }
+
+      // --- SAVE SHIPPING ADDRESS TO USER_ADDRESSES ---
+      if (effectiveUserId && shippingDetails?.address) {
+        try {
+          const addr = shippingDetails.address;
+          const streetAddress = addr.line1 || metadata.shipping_address || "";
+          const city = addr.city || metadata.shipping_city || "";
+          const state = addr.state || metadata.shipping_state || "";
+          const postalCode = addr.postal_code || metadata.shipping_zip || "";
+          const country = addr.country || metadata.shipping_country || "";
+
+          if (streetAddress && city) {
+            // Check if this exact address already exists for the user
+            const { data: existingAddresses } = await supabase
+              .from("user_addresses")
+              .select("id")
+              .eq("user_id", effectiveUserId)
+              .eq("street_address", streetAddress)
+              .eq("postal_code", postalCode);
+
+            if (!existingAddresses || existingAddresses.length === 0) {
+              // Check if user has any addresses (to set is_default)
+              const { count } = await supabase
+                .from("user_addresses")
+                .select("id", { count: "exact", head: true })
+                .eq("user_id", effectiveUserId);
+
+              const isFirstAddress = (count || 0) === 0;
+
+              const { error: addrError } = await supabase
+                .from("user_addresses")
+                .insert({
+                  user_id: effectiveUserId,
+                  street_address: streetAddress,
+                  city,
+                  state,
+                  postal_code: postalCode,
+                  country,
+                  is_default: isFirstAddress,
+                });
+
+              if (addrError) {
+                console.error("Error saving address:", addrError);
+              } else {
+                console.log("Shipping address saved for user:", effectiveUserId);
+              }
+            } else {
+              console.log("Address already exists, skipping save");
+            }
+          }
+        } catch (addrError) {
+          console.error("Error in address saving:", addrError);
+        }
+      }
+
       // Update product inventory
       for (const item of cartItems) {
         if (item.product_id) {
