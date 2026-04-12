@@ -12,6 +12,7 @@ import ImprovedShippingOptions from "@/components/ImprovedShippingOptions";
 import OrderSummary from "@/components/OrderSummary";
 import { ArrowLeft } from "lucide-react";
 import { usePostPaymentProcessing } from "@/hooks/usePostPaymentProcessing";
+import { useProductsData } from "@/hooks/useDataFetching";
 
 interface ShippingRate {
   object_id: string;
@@ -51,7 +52,25 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { userInfo } = useAuth();
-  const { cartItems, calculateTotal } = useCart();
+  const { cartItems: rawCartItems, calculateTotal } = useCart();
+
+  // Enrich cart items with product details (same as Cart.tsx)
+  const productIds = rawCartItems.map((item) => item.product_id);
+  const { data: products } = useProductsData(productIds, {
+    enabled: productIds.length > 0,
+    refetchOnWindowFocus: false,
+  });
+
+  const productsMap = (products || []).reduce((acc: any, product: any) => {
+    acc[product.id] = product;
+    return acc;
+  }, {});
+
+  const cartItems = rawCartItems.map((item) => ({
+    ...item,
+    product: productsMap[item.product_id] || item.product || null,
+  }));
+
   const total = calculateTotal(cartItems);
   const { language, translations } = useLanguage();
   const { processOrder, isProcessing } = usePostPaymentProcessing();

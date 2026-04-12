@@ -1,31 +1,37 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { CheckCircle, Package, Truck } from "lucide-react";
 
 export default function CheckoutSuccess() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { clearCart } = useCart();
+  const { isLoading: authLoading } = useAuth();
   const [isCleared, setIsCleared] = useState(false);
+  const clearAttempted = useRef(false);
 
   useEffect(() => {
-    const handlePostPayment = async () => {
-      // Clear checkout data from session storage
-      sessionStorage.removeItem("checkout_data");
+    if (isCleared || authLoading || clearAttempted.current) return;
 
-      // Clear cart (Stripe webhook handles order creation, shipping label, and emails)
-      if (!isCleared) {
+    clearAttempted.current = true;
+    sessionStorage.removeItem("checkout_data");
+
+    const performClear = async () => {
+      try {
         await clearCart();
-        setIsCleared(true);
+      } catch (err) {
+        console.error("Error clearing cart:", err);
       }
+      setIsCleared(true);
     };
 
-    handlePostPayment();
-  }, [clearCart, isCleared]);
+    performClear();
+  }, [clearCart, isCleared, authLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">

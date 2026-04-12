@@ -390,12 +390,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Clear entire cart
   const clearCart = useCallback(async () => {
     try {
-      if (isAuthenticated && userInfo) {
-        // Use userInfo from context instead of making a separate API call
+      let userId = userInfo?.id;
+
+      // Fallback: if context userInfo isn't ready yet, check the session directly
+      if (!userId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id;
+      }
+
+      if (userId) {
         const { error } = await supabase
           .from("cart_items")
           .delete()
-          .eq("user_id", userInfo.id);
+          .eq("user_id", userId);
 
         if (error) {
           console.error("Error clearing cart:", error);
@@ -403,7 +410,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Clear localStorage cart
       localStorage.removeItem(CART_KEY);
       localStorage.removeItem(CART_TIMESTAMP_KEY);
       setCartItems([]);
@@ -421,7 +427,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       });
       throw error;
     }
-  }, [isAuthenticated, userInfo, toast]);
+  }, [userInfo, toast]);
 
   // Calculate total price
   const calculateTotal = useCallback((items: CartItem[]) => {
