@@ -21,7 +21,7 @@ interface Product {
   promotion_price?: number | null;
   image_url: string | null;
   additional_images?: string[];
-  description: string | null;
+  description?: string | null;
   stock_quantity?: number | null;
 }
 
@@ -36,7 +36,7 @@ const ProductCard = memo(({ product }: ProductCardProps) => {
   const { addToCart } = useCart();
   const { language, translations } = useLanguage();
   const [autoplayInterval, setAutoplayInterval] =
-    useState<NodeJS.Timeout | null>(null);
+    useState<ReturnType<typeof setInterval> | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
