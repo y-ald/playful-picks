@@ -1,10 +1,7 @@
-import Navbar from '@/components/Navbar';
-
 const About = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <div className="container mx-auto px-4 pt-24">
+    <div className="min-h-screen bg-white pt-24">
+      <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto py-16">
           <h1 className="text-4xl font-bold mb-8">About Kaia Kids</h1>
           <div className="prose prose-lg">

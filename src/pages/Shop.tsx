@@ -94,9 +94,9 @@ const Shop = () => {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <select
-                className="border rounded-md px-3 py-2"
+                className="border rounded-md px-3 py-2 min-w-0 flex-1 sm:flex-none"
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
               >
@@ -111,7 +111,7 @@ const Shop = () => {
                 ))}
               </select>
               <select
-                className="border rounded-md px-3 py-2"
+                className="border rounded-md px-3 py-2 min-w-0 flex-1 sm:flex-none"
                 value={selectedAgeRange || ""}
                 onChange={(e) => setSelectedAgeRange(e.target.value || null)}
               >

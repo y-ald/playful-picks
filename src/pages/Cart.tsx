@@ -61,7 +61,7 @@ export default function Cart() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4 pt-24">
         <div className="flex items-center mb-6">
           <Skeleton className="h-10 w-32 mr-4" />
           <Skeleton className="h-10 w-48" />
@@ -103,7 +103,7 @@ export default function Cart() {
 
   if (cartItems.length === 0) {
     return (
-      <div className="container mx-auto p-4 text-center">
+      <div className="container mx-auto p-4 pt-24 text-center">
         <h2 className="text-2xl font-bold mb-4">Your cart is empty</h2>
         <Button onClick={() => navigate(`/${language}/shop`)}>
           Continue Shopping
@@ -113,8 +113,8 @@ export default function Cart() {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div className="flex items-center mb-6">
+    <div className="container mx-auto p-4 pt-24">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
         <Button
           variant="outline"
           size="sm"

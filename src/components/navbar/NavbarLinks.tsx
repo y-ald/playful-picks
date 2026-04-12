@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 
 interface NavbarLinksProps {
   className?: string;
+  onNavigate?: () => void;
 }
 
-export const NavbarLinks = ({ className = "" }: NavbarLinksProps) => {
+export const NavbarLinks = ({ className = "", onNavigate }: NavbarLinksProps) => {
   const { language, translations, setLanguage } = useLanguage();
   const location = useLocation();
 
@@ -17,16 +18,16 @@ export const NavbarLinks = ({ className = "" }: NavbarLinksProps) => {
 
   return (
     <div className={`flex items-center gap-8 ${className}`}>
-      <Link to={`/${language}`} className="text-gray-600 hover:text-primary transition-colors">
+      <Link to={`/${language}`} className="text-gray-600 hover:text-primary transition-colors" onClick={onNavigate}>
         {translations.navigation?.home || 'Home'}
       </Link>
-      <Link to={`/${language}/shop`} className="text-gray-600 hover:text-primary transition-colors">
+      <Link to={`/${language}/shop`} className="text-gray-600 hover:text-primary transition-colors" onClick={onNavigate}>
         {translations.navigation?.shop || 'Shop'}
       </Link>
-      <Link to={`/${language}/about`} className="text-gray-600 hover:text-primary transition-colors">
+      <Link to={`/${language}/about`} className="text-gray-600 hover:text-primary transition-colors" onClick={onNavigate}>
         {translations.navigation?.about || 'About'}
       </Link>
-      <Link to={`/${language}/contact`} className="text-gray-600 hover:text-primary transition-colors">
+      <Link to={`/${language}/contact`} className="text-gray-600 hover:text-primary transition-colors" onClick={onNavigate}>
         {translations.navigation?.contact || 'Contact'}
       </Link>
       <Button

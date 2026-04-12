@@ -52,13 +52,13 @@ function NavbarIconsComponent() {
   };
 
   return (
-    <div className="flex items-center space-x-4">
-      <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+    <div className="flex items-center space-x-1 sm:space-x-3">
+      <button className="hidden sm:flex p-2 min-w-[44px] min-h-[44px] items-center justify-center hover:bg-gray-100 rounded-full transition-colors">
         <Search className="w-5 h-5 text-gray-600" />
       </button>
       <Link
         to={`/${language}/favorites`}
-        className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+        className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors relative"
       >
         <Heart className="w-5 h-5 text-gray-600" />
         {favoritesCount > 0 && (
@@ -69,7 +69,7 @@ function NavbarIconsComponent() {
       </Link>
       <Link
         to={`/${language}/cart`}
-        className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+        className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors relative"
       >
         <ShoppingCart className="w-5 h-5 text-gray-600" />
         {cartCount > 0 && (
@@ -81,7 +81,7 @@ function NavbarIconsComponent() {
 
       {isAuthenticated ? (
         <DropdownMenu>
-          <DropdownMenuTrigger className="p-2 hover:bg-gray-100 rounded-full transition-colors outline-none">
+          <DropdownMenuTrigger className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors outline-none">
             <User className="w-5 h-5 text-gray-600" />
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 bg-white" align="end">
@@ -114,7 +114,7 @@ function NavbarIconsComponent() {
       ) : (
         <Link
           to={`/${language}/auth`}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
           title="Login/Signup"
         >
           <LogIn className="w-5 h-5 text-gray-600" />

@@ -81,7 +81,7 @@ export default function AdminPage() {
   return (
       <div className="flex min-h-screen w-full">
         <AdminSidebar />
-        <main className="flex-1 p-8 bg-background">
+        <main className="flex-1 p-4 md:p-8 pt-24 md:pt-8 bg-background overflow-x-hidden">
           <Routes>
             <Route path="/" element={<Navigate to={`/${lang}/account/admin/dashboard`} replace />} />
             <Route path="/dashboard" element={<DashboardSection />} />

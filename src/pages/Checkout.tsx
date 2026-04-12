@@ -151,7 +151,7 @@ export default function Checkout() {
   // Check for empty cart
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-24">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">No items in cart</h2>
           <Button onClick={() => navigate(`/${language}/shop`)}>
@@ -163,7 +163,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen container mx-auto p-4">
+    <div className="min-h-screen container mx-auto p-4 pt-24">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-8">
           <Button
@@ -179,7 +179,7 @@ export default function Checkout() {
         </div>
 
         <div className="grid gap-8 md:grid-cols-[1fr,400px]">
-          <Card className="p-8">
+          <Card className="p-4 sm:p-8">
             <h2 className="text-2xl font-semibold mb-6">
               Shipping Information
             </h2>
