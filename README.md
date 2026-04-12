@@ -95,7 +95,7 @@ npx supabase secrets list --project-ref ktmqwhkywxogxktuqcfx
 npx supabase secrets set STRIPE_SECRET_KEY=sk_live_xxx --project-ref ktmqwhkywxogxktuqcfx
 npx supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_xxx --project-ref ktmqwhkywxogxktuqcfx
 npx supabase secrets set SHIPPO_API_KEY=shippo_live_xxx --project-ref ktmqwhkywxogxktuqcfx
-npx supabase secrets set ADMIN_EMAIL=admin@yourdomain.com --project-ref ktmqwhkywxogxktuqcfx
+npx supabase secrets set ADMIN_EMAIL=your-email@example.com --project-ref ktmqwhkywxogxktuqcfx
 
 # Unset a secret
 npx supabase secrets unset SECRET_NAME --project-ref ktmqwhkywxogxktuqcfx
