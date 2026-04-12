@@ -8,9 +8,10 @@ interface NavLinkProps {
   className?: string;
   activeClassName?: string;
   end?: boolean;
+  onClick?: () => void;
 }
 
-export const NavLink = ({ to, children, className, activeClassName, end = false }: NavLinkProps) => {
+export const NavLink = ({ to, children, className, activeClassName, end = false, onClick }: NavLinkProps) => {
   const location = useLocation();
   const isActive = end 
     ? location.pathname === to 
@@ -23,6 +24,7 @@ export const NavLink = ({ to, children, className, activeClassName, end = false 
         className,
         isActive && activeClassName
       )}
+      onClick={onClick}
     >
       {children}
     </Link>
