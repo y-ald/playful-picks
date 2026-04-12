@@ -2,8 +2,25 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, TrendingUp, ShoppingCart, Users, Package } from "lucide-react";
+import { Loader2, TrendingUp, ShoppingCart, Users, Package, ArrowLeft, Eye, MapPin, Calendar, User } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface DashboardStats {
   totalRevenue: number;
@@ -14,10 +31,30 @@ interface DashboardStats {
   yearlyRevenue: Array<{ year: number; revenue: number }>;
 }
 
+interface OrderDetail {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  status: string;
+  payment_status: string | null;
+  shipping_address: string;
+  items: string | null;
+  user_id: string | null;
+  tracking_number: string | null;
+  shipping_method: string | null;
+}
+
+type DetailView = "orders" | "customers" | "products" | null;
+
 export const DashboardSection = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
+  const [detailView, setDetailView] = useState<DetailView>(null);
+  const [orders, setOrders] = useState<OrderDetail[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null);
+  const [userEmails, setUserEmails] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,30 +64,95 @@ export const DashboardSection = () => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session found");
 
       const { data, error } = await supabase.functions.invoke('admin-get-stats', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { period },
       });
-
       if (error) throw error;
-
       setStats(data);
     } catch (error) {
       console.error("Error fetching stats:", error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les statistiques",
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: "Impossible de charger les statistiques", variant: "destructive" });
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      setOrders(data || []);
+
+      // Fetch user emails via admin edge function
+      const userIds = [...new Set((data || []).map(o => o.user_id).filter(Boolean))];
+      if (userIds.length > 0) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: customersData } = await supabase.functions.invoke('admin-get-customers', {
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+          if (customersData?.customers) {
+            const emailMap: Record<string, string> = {};
+            customersData.customers.forEach((c: any) => {
+              emailMap[c.id] = c.email;
+            });
+            setUserEmails(emailMap);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleCardClick = (view: DetailView) => {
+    setDetailView(view);
+    if (view === "orders" || view === "customers") {
+      fetchOrders();
+    }
+  };
+
+  const parseItems = (items: string | null) => {
+    try { return JSON.parse(items || "[]"); } catch { return []; }
+  };
+
+  const parseAddress = (address: string) => {
+    try {
+      const parsed = JSON.parse(address);
+      if (parsed.address) {
+        return {
+          line1: parsed.address.line1 || "",
+          city: parsed.address.city || "",
+          state: parsed.address.state || "",
+          postal_code: parsed.address.postal_code || "",
+          country: parsed.address.country || "",
+          name: parsed.name || "",
+        };
+      }
+      return null;
+    } catch { return null; }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      pending: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
+      processing: "bg-blue-500/10 text-blue-600 border-blue-500/30",
+      shipped: "bg-purple-500/10 text-purple-600 border-purple-500/30",
+      delivered: "bg-green-500/10 text-green-600 border-green-500/30",
+      cancelled: "bg-red-500/10 text-red-600 border-red-500/30",
+    };
+    return <Badge variant="outline" className={styles[status] || ""}>{status}</Badge>;
   };
 
   if (loading) {
@@ -62,6 +164,154 @@ export const DashboardSection = () => {
   }
 
   if (!stats) return null;
+
+  // Order detail dialog
+  const orderDialog = selectedOrder && (
+    <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-primary" />
+            Commande #{selectedOrder.id.startsWith("order-") ? selectedOrder.id.slice(6, 14) : selectedOrder.id.slice(0, 8)}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {/* Info grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Date</p>
+              <p className="font-medium text-sm">
+                {new Date(selectedOrder.created_at).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" })}
+              </p>
+              <p className="text-xs text-muted-foreground">{new Date(selectedOrder.created_at).toLocaleTimeString("fr-FR")}</p>
+            </div>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground">Montant</p>
+              <p className="font-bold text-lg text-primary">${selectedOrder.total_amount.toFixed(2)}</p>
+            </div>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground">Statut</p>
+              {getStatusBadge(selectedOrder.status)}
+            </div>
+            <div className="bg-muted/50 p-3 rounded-lg">
+              <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Client</p>
+              <p className="font-medium text-sm truncate">{selectedOrder.user_id ? (userEmails[selectedOrder.user_id] || selectedOrder.user_id.slice(0, 8)) : "Anonyme"}</p>
+            </div>
+          </div>
+
+          {/* Address */}
+          {(() => {
+            const addr = parseAddress(selectedOrder.shipping_address);
+            return addr ? (
+              <div className="p-3 border rounded-lg">
+                <p className="text-sm font-medium flex items-center gap-1 mb-1"><MapPin className="h-4 w-4" /> Adresse de livraison</p>
+                {addr.name && <p className="text-sm font-medium">{addr.name}</p>}
+                <p className="text-sm">{addr.line1}</p>
+                <p className="text-sm">{addr.city}, {addr.state} {addr.postal_code}</p>
+                <p className="text-sm">{addr.country}</p>
+              </div>
+            ) : (
+              <div className="p-3 border rounded-lg">
+                <p className="text-sm font-medium flex items-center gap-1 mb-1"><MapPin className="h-4 w-4" /> Adresse</p>
+                <p className="text-sm">{selectedOrder.shipping_address}</p>
+              </div>
+            );
+          })()}
+
+          {/* Tracking */}
+          {selectedOrder.tracking_number && (
+            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-sm font-medium">Numéro de suivi</p>
+              <code className="font-mono text-sm">{selectedOrder.tracking_number}</code>
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Items */}
+          {(() => {
+            const items = parseItems(selectedOrder.items);
+            return items.length > 0 ? (
+              <div>
+                <p className="text-sm font-medium mb-2">Articles</p>
+                <div className="space-y-2">
+                  {items.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                      <div>
+                        <p className="text-sm font-medium">{item.description || item.name || "Article"}</p>
+                        <p className="text-xs text-muted-foreground">Qté: {item.quantity}</p>
+                      </div>
+                      <p className="text-sm font-semibold">${((item.amount_total || item.price || 0) / 100).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null;
+          })()}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Detail view for orders
+  if (detailView === "orders" || detailView === "customers") {
+    return (
+      <div className="space-y-6">
+        {orderDialog}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setDetailView(null)}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Retour
+          </Button>
+          <h2 className="text-2xl font-bold">
+            {detailView === "orders" ? "Détails des commandes" : "Commandes par client"}
+          </h2>
+        </div>
+
+        {ordersLoading ? (
+          <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° Commande</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Montant</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setSelectedOrder(order)}>
+                      <TableCell className="font-mono text-sm">
+                        {order.id.startsWith("order-") ? order.id.slice(6, 14) : order.id.slice(0, 8)}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(order.created_at).toLocaleDateString("fr-FR")}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {order.user_id ? (userEmails[order.user_id] || order.user_id.slice(0, 8) + "...") : "Anonyme"}
+                      </TableCell>
+                      <TableCell className="font-semibold text-primary">${order.total_amount.toFixed(2)}</TableCell>
+                      <TableCell>{getStatusBadge(order.status)}</TableCell>
+                      <TableCell>
+                        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setSelectedOrder(order); }}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -76,9 +326,9 @@ export const DashboardSection = () => {
         </Tabs>
       </div>
 
-      {/* KPIs */}
+      {/* KPIs - now clickable */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => handleCardClick("orders")}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">Chiffre d'affaires</CardTitle>
@@ -97,7 +347,7 @@ export const DashboardSection = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => handleCardClick("orders")}>
           <div className="absolute inset-0 bg-gradient-to-br from-accent/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">Commandes</CardTitle>
@@ -116,7 +366,7 @@ export const DashboardSection = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => handleCardClick("customers")}>
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">Nouveaux clients</CardTitle>
@@ -135,7 +385,7 @@ export const DashboardSection = () => {
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300">
+        <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 cursor-pointer" onClick={() => handleCardClick("products")}>
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
             <CardTitle className="text-sm font-medium text-muted-foreground">Produits vendus</CardTitle>

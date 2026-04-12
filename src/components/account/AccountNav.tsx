@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { User, Map, LogOut, ShoppingBag } from "lucide-react";
+import { User, Map, LogOut, ShoppingBag, Package } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -93,13 +93,21 @@ export function AccountNav() {
       >
         Profile
       </NavItem>
+
+      <NavItem
+        to={`/${lang}/account/orders`}
+        icon={<Package size={18} />}
+        active={isActive("/account/orders")}
+      >
+        {lang === "fr" ? "Mes commandes" : "My Orders"}
+      </NavItem>
       
       <NavItem
         to={`/${lang}/account/addresses`}
         icon={<Map size={18} />}
         active={isActive("/account/addresses")}
       >
-        Addressese
+        Addresses
       </NavItem>
       
       {isAdmin && (
