@@ -3,9 +3,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { splitVendorChunkPlugin } from 'vite';
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,7 +14,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    splitVendorChunkPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -25,29 +21,23 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Enable sourcemaps for debugging
     sourcemap: mode === 'development',
-    // Improve chunk size warnings
     chunkSizeWarningLimit: 1000,
-    // Optimize CSS
     cssCodeSplit: true,
-    // Use modulepreload polyfill
     modulePreload: {
       polyfill: true,
     },
-    // Improve SSR build
     target: 'esnext',
-    // Minify options
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          supabase: ['@supabase/supabase-js'],
+          ui: ['framer-motion', 'lucide-react', 'recharts'],
+        },
       },
     },
-    terserPath: require.resolve('terser'),
   },
-  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: [
       'react', 
