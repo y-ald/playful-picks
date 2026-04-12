@@ -30,10 +30,13 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          ui: ['framer-motion', 'lucide-react', 'recharts'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) return 'supabase';
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
+            if (id.includes('react-dom') || id.includes('react-router') || id.includes('react/')) return 'vendor';
+            if (id.includes('framer-motion')) return 'motion';
+          }
         },
       },
     },
