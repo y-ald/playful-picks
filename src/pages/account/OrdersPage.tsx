@@ -33,7 +33,7 @@ const OrdersPage = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const { lang } = useParams<{ lang: string }>();
 
   useEffect(() => {

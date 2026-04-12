@@ -93,13 +93,21 @@ export function AccountNav() {
       >
         Profile
       </NavItem>
+
+      <NavItem
+        to={`/${lang}/account/orders`}
+        icon={<Package size={18} />}
+        active={isActive("/account/orders")}
+      >
+        {lang === "fr" ? "Mes commandes" : "My Orders"}
+      </NavItem>
       
       <NavItem
         to={`/${lang}/account/addresses`}
         icon={<Map size={18} />}
         active={isActive("/account/addresses")}
       >
-        Addressese
+        Addresses
       </NavItem>
       
       {isAdmin && (
