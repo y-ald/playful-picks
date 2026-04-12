@@ -1,19 +1,38 @@
-import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import Navbar from "@/components/Navbar";
+import { useCart } from "@/contexts/CartContext";
 import ImprovedShippingForm from "@/components/ImprovedShippingForm";
 import ImprovedShippingOptions from "@/components/ImprovedShippingOptions";
 import OrderSummary from "@/components/OrderSummary";
 import { ArrowLeft } from "lucide-react";
 import { usePostPaymentProcessing } from "@/hooks/usePostPaymentProcessing";
+import { useProductsData } from "@/hooks/useDataFetching";
 
-// List of supported countries
+interface ShippingRate {
+  object_id: string;
+  provider: string;
+  servicelevel: { name: string };
+  amount: string | number;
+  estimated_days: number;
+}
+
+interface ShippingFormValues {
+  name: string;
+  email: string;
+  phone?: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
 const countries = [
   { name: "Canada", code: "CA" },
   { name: "United States", code: "US" },
@@ -27,32 +46,45 @@ const countries = [
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
-  const [shippingRates, setShippingRates] = useState([]);
-  const [selectedRate, setSelectedRate] = useState(null);
-  const [formValues, setFormValues] = useState(null);
-  const location = useLocation();
+  const [shippingRates, setShippingRates] = useState<ShippingRate[]>([]);
+  const [selectedRate, setSelectedRate] = useState<ShippingRate | null>(null);
+  const [formValues, setFormValues] = useState<ShippingFormValues | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { userInfo } = useAuth();
-  const { cartItems, total } = location.state || { cartItems: [], total: 0 };
+  const { cartItems: rawCartItems, calculateTotal } = useCart();
+
+  // Enrich cart items with product details (same as Cart.tsx)
+  const productIds = rawCartItems.map((item) => item.product_id);
+  const { data: products } = useProductsData(productIds, {
+    enabled: productIds.length > 0,
+    refetchOnWindowFocus: false,
+  });
+
+  const productsMap = (products || []).reduce((acc: any, product: any) => {
+    acc[product.id] = product;
+    return acc;
+  }, {});
+
+  const cartItems = rawCartItems.map((item) => ({
+    ...item,
+    product: productsMap[item.product_id] || item.product || null,
+  }));
+
+  const total = calculateTotal(cartItems);
   const { language, translations } = useLanguage();
   const { processOrder, isProcessing } = usePostPaymentProcessing();
 
-  // Handle shipping rates calculation
-  const handleShippingRatesCalculated = (rates) => {
+  const handleShippingRatesCalculated = (rates: ShippingRate[]) => {
     setShippingRates(rates);
   };
 
-  // Handle shipping rate selection
-  const handleRateSelected = (rate) => {
+  const handleRateSelected = (rate: ShippingRate) => {
     setSelectedRate(rate);
   };
 
-  // Handle form submission
-  const handleFormSubmit = (values) => {
+  const handleFormSubmit = (values: ShippingFormValues) => {
     setFormValues(values);
-    // Log the form values for debugging
-    console.log("Form values:", values);
   };
 
   // Handle checkout submission
@@ -139,7 +171,7 @@ export default function Checkout() {
   // Check for empty cart
   if (cartItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4 pt-24">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">No items in cart</h2>
           <Button onClick={() => navigate(`/${language}/shop`)}>
@@ -151,8 +183,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="min-h-screen container mx-auto p-4">
-      <Navbar />
+    <div className="min-h-screen container mx-auto p-4 pt-24">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-8">
           <Button
@@ -168,7 +199,7 @@ export default function Checkout() {
         </div>
 
         <div className="grid gap-8 md:grid-cols-[1fr,400px]">
-          <Card className="p-8">
+          <Card className="p-4 sm:p-8">
             <h2 className="text-2xl font-semibold mb-6">
               Shipping Information
             </h2>
@@ -179,8 +210,7 @@ export default function Checkout() {
               onRateSelected={handleRateSelected}
               onFormSubmit={handleFormSubmit}
             />
-            {/* Add a debug section to show the current state */}
-            {process.env.NODE_ENV === "development" && (
+            {import.meta.env.DEV && (
               <div className="mt-4 p-4 bg-gray-100 rounded-md">
                 <h3 className="text-sm font-semibold mb-2">Debug Info:</h3>
                 <p className="text-xs">

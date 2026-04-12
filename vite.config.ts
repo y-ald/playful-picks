@@ -3,9 +3,6 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
-import { splitVendorChunkPlugin } from 'vite';
-import { createRequire } from 'node:module';
-const require = createRequire(import.meta.url);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -17,7 +14,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' && componentTagger(),
-    splitVendorChunkPlugin(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -25,29 +21,26 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Enable sourcemaps for debugging
     sourcemap: mode === 'development',
-    // Improve chunk size warnings
     chunkSizeWarningLimit: 1000,
-    // Optimize CSS
     cssCodeSplit: true,
-    // Use modulepreload polyfill
     modulePreload: {
       polyfill: true,
     },
-    // Improve SSR build
     target: 'esnext',
-    // Minify options
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: mode === 'production',
-        drop_debugger: mode === 'production',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) return 'supabase';
+            if (id.includes('recharts') || id.includes('d3-') || id.includes('victory')) return 'charts';
+            if (id.includes('react-dom') || id.includes('react-router') || id.includes('react/')) return 'vendor';
+            if (id.includes('framer-motion')) return 'motion';
+          }
+        },
       },
     },
-    terserPath: require.resolve('terser'),
   },
-  // Optimize dependency pre-bundling
   optimizeDeps: {
     include: [
       'react', 
@@ -58,7 +51,6 @@ export default defineConfig(({ mode }) => ({
       'framer-motion',
       'lucide-react'
     ],
-    // Force the optimizer to also process listed dependencies
-    force: true,
+    force: false,
   }
 }));

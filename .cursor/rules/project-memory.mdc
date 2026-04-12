@@ -1,0 +1,279 @@
+---
+description: Comprehensive project memory - architecture, structure, patterns, database schema, and conventions for playful-picks e-commerce app
+alwaysApply: true
+---
+
+# Playful Picks - Project Memory
+
+## Overview
+
+E-commerce web app for children's toys/products (totebag brand). Bilingual (EN/FR), Supabase backend, Stripe payments, shipping integration. Originally scaffolded via Lovable.dev, now maintained locally.
+
+- **Lovable project**: `3923f859-5de7-429d-b09a-7e8f16b14485`
+- **Supabase project**: `ktmqwhkywxogxktuqcfx`
+- **Deploy target**: Netlify (SPA fallback in `netlify.toml`)
+- **Dev server**: `localhost:8080`
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | React 18 + TypeScript |
+| Bundler | Vite 5 (SWC plugin, terser minify, vendor chunk split) |
+| Styling | Tailwind CSS 3 + `tailwindcss-animate` |
+| UI Library | shadcn/ui (Radix primitives + CVA + lucide-react icons) |
+| State | React Context + TanStack React Query v5 |
+| Routing | react-router-dom v6 (`BrowserRouter` + `Routes`) |
+| Backend | Supabase (Postgres, Auth, Edge Functions, Realtime) |
+| Forms | react-hook-form + zod validation |
+| Animations | framer-motion |
+| i18n | Custom `LanguageContext` with JSON locale files (`en.json`, `fr.json`) |
+| Payments | Stripe (via Supabase Edge Function `create-checkout` + `stripe-webhook`) |
+| Shipping | Supabase Edge Function `shipping` |
+| Charts | Recharts (admin dashboard) |
+| HTTP | axios (Mapbox), Supabase JS client (everything else) |
+
+## Directory Structure
+
+```
+playful-picks/
+├── src/
+│   ├── main.tsx                 # Entry point (client render + link prefetch)
+│   ├── App.tsx                  # Provider stack + layout (Navbar/Footer)
+│   ├── AppRoutes.tsx            # Route definitions
+│   ├── router.tsx               # UNUSED - createBrowserRouter (not wired)
+│   ├── index.css                # Tailwind + CSS variables (shadcn tokens)
+│   │
+│   ├── components/
+│   │   ├── ui/                  # shadcn/ui primitives (40+ components)
+│   │   ├── navbar/              # NavbarIcons, NavbarLinks
+│   │   ├── admin/               # Admin panel components
+│   │   ├── account/             # Account management (profile, addresses)
+│   │   ├── Navbar.tsx, Footer.tsx, Hero.tsx, NewArrivals.tsx
+│   │   ├── ProductCard.tsx, OptimizedProductCard.tsx
+│   │   ├── CartItemRow.tsx, CheckoutItemRow.tsx, OrderSummary.tsx
+│   │   ├── ShippingForm.tsx, ImprovedShippingForm.tsx
+│   │   ├── ShippingOptions.tsx, ImprovedShippingOptions.tsx
+│   │   ├── OptimizedImage.tsx, SSROptimizedImage.tsx
+│   │   ├── DataSyncManager.tsx  # Merges local/remote cart+favorites on auth
+│   │   └── AgeCategories.tsx, FavoriteProductCard.tsx, NavLink.tsx
+│   │
+│   ├── pages/
+│   │   ├── Index.tsx            # Home page
+│   │   ├── Shop.tsx             # Product catalog
+│   │   ├── ProductDetails.tsx   # Single product view
+│   │   ├── Cart.tsx, Checkout.tsx, CheckoutSuccess.tsx
+│   │   ├── Auth.tsx             # Login/register
+│   │   ├── Favorites.tsx        # Wishlist
+│   │   ├── Contact.tsx, About.tsx
+│   │   ├── TrackingPage.tsx     # Order tracking
+│   │   ├── Terms.tsx, Privacy.tsx, Legal.tsx
+│   │   ├── NotFound.tsx
+│   │   └── account/
+│   │       ├── ProfilePage.tsx
+│   │       ├── AddressesPage.tsx
+│   │       └── AdminPage.tsx    # Admin dashboard (wildcard route)
+│   │
+│   ├── contexts/
+│   │   ├── AuthContext.tsx      # Supabase auth wrapper + singleton pattern
+│   │   ├── CartContext.tsx      # Cart state (Supabase + localStorage fallback)
+│   │   ├── FavoritesContext.tsx # Favorites (same dual-storage pattern)
+│   │   ├── LanguageContext.tsx  # i18n (en/fr) via URL prefix
+│   │   └── NavigationContext.tsx
+│   │
+│   ├── hooks/
+│   │   ├── useAuthStatus.ts     # Global singleton auth, localStorage cache
+│   │   ├── useDataFetching.ts   # Batched Supabase queries via React Query
+│   │   ├── useCart.ts, useCartActions.ts, useCartStorage.ts
+│   │   ├── useFavorites.ts, useFavoriteActions.ts, useFavoritesStorage.ts
+│   │   ├── useMergeCart.ts, useMergeFavorites.ts
+│   │   ├── useCheckoutForm.ts, usePostPaymentProcessing.ts
+│   │   ├── useProductEdit.ts, useProductForm.ts
+│   │   ├── useProfile.ts, useNavbarData.ts
+│   │   ├── useOptimizedQuery.ts, useOptimizedRender.ts
+│   │   ├── use-mobile.tsx       # Responsive breakpoint hook
+│   │   └── use-toast.ts
+│   │
+│   ├── integrations/
+│   │   ├── supabase/
+│   │   │   ├── client.ts        # createClient<Database> (hardcoded URL+anon key)
+│   │   │   └── types.ts         # Auto-generated DB types
+│   │   └── mapbox/
+│   │       └── client.ts        # Mapbox geocoding API via axios
+│   │
+│   ├── lib/
+│   │   ├── utils.ts             # cn() helper, debounce, throttle
+│   │   └── calculateParcelSize.ts
+│   │
+│   ├── models/
+│   │   ├── AddressData.ts
+│   │   └── ProfileData.ts
+│   │
+│   ├── locales/
+│   │   ├── en.json
+│   │   └── fr.json
+│   │
+│   └── utils/
+│       └── lazyLoad.tsx         # Code-splitting helpers
+│
+├── supabase/                    # Supabase project config
+│   ├── config.toml              # Project ID + function settings
+│   ├── migrations/              # 5 SQL migration files
+│   └── functions/
+│       ├── _shared/cors.ts
+│       ├── create-checkout/     # Stripe checkout session creation
+│       ├── stripe-webhook/      # Stripe webhook handler
+│       ├── shipping/            # Shipping rates + tracking
+│       ├── send-email/          # Email sending
+│       ├── admin-get-stats/     # Admin dashboard stats
+│       └── admin-get-customers/ # Admin customer list
+│
+└── public/
+    └── placeholder.svg
+```
+
+## Provider Hierarchy (App.tsx)
+
+```
+QueryClientProvider (staleTime: 5min, retry: 1)
+  └── BrowserRouter
+      └── LanguageProvider
+          └── AuthProvider
+              └── DataSyncManager
+                  └── CartProvider
+                      └── FavoritesProvider
+                          └── NavigationProvider
+                              ├── Navbar
+                              ├── AppRoutes
+                              ├── Footer
+                              └── Toaster
+```
+
+## Routing Pattern
+
+All routes use `/:lang` prefix for i18n (en/fr). `LanguageContext` reads first path segment.
+
+| Route | Page |
+|-------|------|
+| `/` and `/:lang` | Index (Home) |
+| `/:lang/shop` | Shop catalog |
+| `/:lang/product/:id` | Product details |
+| `/:lang/cart` | Shopping cart |
+| `/:lang/checkout` | Checkout flow |
+| `/:lang/checkout/success` | Post-payment success |
+| `/:lang/auth` | Login/Register |
+| `/:lang/favorites` | Wishlist |
+| `/:lang/contact` | Contact form |
+| `/:lang/tracking` | Order tracking |
+| `/:lang/account` | Profile |
+| `/:lang/account/addresses` | Saved addresses |
+| `/:lang/account/admin/*` | Admin panel (wildcard) |
+| `/:lang/terms` | Terms of service |
+| `/:lang/privacy` | Privacy policy |
+| `/:lang/legal` | Legal notice |
+| `*` | 404 NotFound |
+
+## Database Schema (Supabase Postgres)
+
+### Tables
+
+- **products**: id, name, price, promotion_price, description, image_url, additional_images[], category, age_range, stock_quantity, created_at, updated_at
+- **cart_items**: id, product_id (FK→products), user_id, client_id, quantity, order_id (FK→orders), created_at
+- **favorites**: id, product_id (FK→products), user_id, client_id, created_at
+- **orders**: id, user_id, total_amount, shipping_address, status, payment_status, stripe_checkout_session_id, stripe_payment_id, shipment_id (FK→shipments), tracking_number, shipping_method, items, created_at
+- **order_items**: id, order_id (FK→orders), product_id (FK→products), quantity, price_at_time, created_at
+- **profiles**: id (matches auth.users), first_name, last_name, phone_number, created_at, updated_at
+- **user_addresses**: id, user_id, street_address, city, state, postal_code, country, is_default, created_at, updated_at
+- **shipments**: id, order_id, carrier, tracking_number, status, address_from (JSON), address_to (JSON), parcel (JSON), rate_id, label_url, metadata (JSON), created_at, updated_at
+- **contact_messages**: id, name, email, message, created_at
+- **user_roles**: id, user_id, role (enum: "admin" | "user"), created_at
+
+### RPC Functions
+
+- `decrement_product_stock(product_uuid, quantity_to_subtract)`
+- `get_default_address(user_uuid)` → returns user_addresses row
+- `has_role(_role, _user_id)` → boolean
+
+### Enums
+
+- `app_role`: "admin" | "user"
+
+## Key Architectural Patterns
+
+### Dual-Storage (Cart & Favorites)
+- **Authenticated users**: Data stored in Supabase with realtime subscriptions
+- **Anonymous users**: Data stored in localStorage with 30-min expiry
+- **DataSyncManager**: Merges localStorage data into Supabase on login
+
+### Data Fetching (useDataFetching.ts)
+- Global batch queue groups Supabase requests by table
+- 50ms delay window for batching similar queries
+- In-flight request deduplication via `inFlightRequests` Map
+- Wrapped in React Query with 5-min stale / 30-min GC defaults
+
+### Auth (useAuthStatus.ts)
+- Global singleton pattern (module-level state)
+- localStorage cache (`AUTH_CACHE_KEY`) for instant hydration
+- Supabase `onAuthStateChange` listener
+- Exposes `getCurrentUser()` / `getCurrentSession()` for non-hook usage
+
+### Performance Optimizations
+- Vite vendor chunk splitting + terser minification
+- Console/debugger stripping in production
+- `optimizeDeps.include` for key dependencies
+- Link prefetching via IntersectionObserver (main.tsx)
+- `useOptimizedRender` / `useOptimizedQuery` hooks
+
+## Design System
+
+- **Colors**: primary `#FF69B4` (pink), secondary `#4A4A4A` (dark gray), accent `#33C3F0` (blue)
+- **Border radius**: sm=8px, md=12px, lg=16px
+- **Animations**: fade-in (opacity+translateY), slide-in (translateX)
+- **Dark mode**: CSS class-based (`darkMode: ["class"]`) - token vars defined but ThemeProvider not wired
+- **Icons**: lucide-react
+- **Toast**: Radix toast via `use-toast.ts`
+
+## Supabase Edge Functions
+
+All functions have `verify_jwt = false` in config.toml.
+
+| Function | Purpose |
+|----------|---------|
+| `create-checkout` | Creates Stripe checkout session |
+| `stripe-webhook` | Handles Stripe payment events |
+| `shipping` | Shipping rates, labels, tracking |
+| `send-email` | Transactional email sending |
+| `admin-get-stats` | Dashboard statistics |
+| `admin-get-customers` | Customer list for admin |
+
+## Build & Scripts
+
+| Script | Command |
+|--------|---------|
+| `dev` | `vite` (port 8080) |
+| `build` | `vite build` (production, drops console) |
+| `build:dev` | `vite build --mode development` (with sourcemaps) |
+| `lint` | `eslint .` |
+| `preview` | `vite preview` |
+
+## Known Issues / Tech Debt
+
+- `@tanstack/react-query` is in devDependencies but used at runtime (should be in dependencies)
+- `axios` is duplicated in both dependencies and devDependencies
+- `@ckeditor/vite-plugin-ckeditor5` is unused (no imports found)
+- `router.tsx` (createBrowserRouter) is not wired - App.tsx uses BrowserRouter
+- `@tailwindcss/typography` in devDeps but not registered in tailwind.config.ts plugins
+- `ThemeProvider` from `next-themes` not wired in App.tsx (dark mode incomplete)
+- Supabase anon key and Mapbox token are hardcoded in source (anon key is public-by-design)
+- `src/supabase/functions/` duplicates parts of root `supabase/functions/` (likely stale)
+- No automated tests (no test runner, no test files)
+- No `.env.example` file
+- Vite timestamp cache files at root should be gitignored
+
+## Import Aliases
+
+- `@/*` → `./src/*` (configured in tsconfig.json + vite.config.ts)
+- shadcn component paths: `@/components/ui/*`
+- Hooks: `@/hooks/*`
+- Contexts: `@/contexts/*`
+- Lib utilities: `@/lib/utils`

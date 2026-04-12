@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Heart, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useCart } from "@/contexts/CartContext";
@@ -11,25 +10,35 @@ import { useProductData } from "@/hooks/useDataFetching";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { language, translations } = useLanguage();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { addToCart } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Fetch product data using our optimized hook
-  const { data: product, isLoading, error } = useProductData(id);
+  const { data: product, isLoading, error } = useProductData(id ?? "");
 
-  // Prepare all product images
   const images = product
     ? [product.image_url, ...(product.additional_images || [])].filter(Boolean)
     : [];
 
-  // Reset current image index when product changes
   useEffect(() => {
     setCurrentImageIndex(0);
   }, [id]);
+
+  if (!id) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="container mx-auto px-4 pt-24 text-center">
+          <h2 className="text-2xl font-bold mb-4">Invalid product</h2>
+          <p className="text-gray-600 mb-6">No product ID was provided.</p>
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
@@ -86,7 +95,6 @@ const ProductDetails = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
         <div className="container mx-auto px-4 pt-24">
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-4">
@@ -119,7 +127,6 @@ const ProductDetails = () => {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-white">
-        <Navbar />
         <div className="container mx-auto px-4 pt-24 text-center">
           <h2 className="text-2xl font-bold mb-4">Product not found</h2>
           <p className="text-gray-600 mb-6">
@@ -133,7 +140,6 @@ const ProductDetails = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       <div className="container mx-auto px-4 pt-24">
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-4">

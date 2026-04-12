@@ -1,0 +1,341 @@
+---
+description: React 18 + TypeScript best practices - component patterns, hooks, context, performance, forms, and code organization for this project
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# React 18 + TypeScript Best Practices
+
+## Project Conventions
+
+- **Path alias**: `@/*` maps to `src/*`
+- **UI library**: shadcn/ui (Radix + CVA + Tailwind) in `src/components/ui/`
+- **State**: React Context for global state + TanStack Query v5 for server state
+- **Forms**: react-hook-form + zod validation
+- **Routing**: react-router-dom v6 with `/:lang` prefix for i18n
+- **Icons**: lucide-react
+
+## Component Patterns
+
+### Functional Components with Props Interface
+
+```typescript
+interface ProductCardProps {
+  product: Tables<"products">;
+  onAddToCart?: (productId: string) => void;
+  className?: string;
+}
+
+const ProductCard = ({ product, onAddToCart, className }: ProductCardProps) => {
+  return (/* ... */);
+};
+```
+
+### Export Conventions
+
+- Named exports for utility components, hooks, contexts
+- Default export for page components (required by React Router)
+- Re-export hooks from their context files: `export const useCart = () => { ... }`
+
+### Children Pattern
+
+```typescript
+interface LayoutProps {
+  children: ReactNode;  // use ReactNode, not React.FC
+}
+```
+
+## Hooks Best Practices
+
+### Custom Hook Structure
+
+```typescript
+export function useProductData(productId: string) {
+  // 1. All hooks at top level
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // 2. Derived state with useMemo
+  const isValid = useMemo(() => !!productId, [productId]);
+
+  // 3. Callbacks with useCallback (stable references for child components)
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["product", productId] });
+  }, [queryClient, productId]);
+
+  // 4. Side effects last
+  useEffect(() => { /* ... */ }, [productId]);
+
+  // 5. Return typed object
+  return { data, isLoading, refresh };
+}
+```
+
+### When to Memoize
+
+```typescript
+// USE useMemo when: expensive computation or referential equality matters
+const sortedItems = useMemo(
+  () => items.sort((a, b) => a.price - b.price),
+  [items]
+);
+
+// USE useCallback when: passing functions to memoized children or effect deps
+const handleClick = useCallback((id: string) => {
+  addToCart(id);
+}, [addToCart]);
+
+// DON'T memoize: simple values, primitive calculations, rarely-changing data
+const count = items.length; // no memo needed
+```
+
+### Context Provider Pattern (project standard)
+
+```typescript
+interface CartContextType {
+  cartItems: CartItem[];
+  cartCount: number;
+  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  // ... all methods
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export const CartProvider = ({ children }: { children: ReactNode }) => {
+  // State, callbacks, effects...
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    cartItems, cartCount, addToCart, removeItem, /* ... */
+  }), [cartItems, cartCount, addToCart, removeItem]);
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+};
+
+// Safe consumer hook with error boundary
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
+};
+```
+
+## TypeScript Patterns
+
+### Strict Typing Over `any`
+
+```typescript
+// AVOID any — use proper types
+const handleSelect = (result: any) => { ... }  // bad
+
+// USE specific types or generics
+interface MapboxFeature {
+  properties: {
+    name: string;
+    full_address?: string;
+    context: FeatureContext;
+  };
+}
+const handleSelect = (result: MapboxFeature) => { ... }  // good
+
+// When type is truly unknown, use unknown + type guard
+function processData(input: unknown): string {
+  if (typeof input === "string") return input;
+  if (typeof input === "object" && input !== null) return JSON.stringify(input);
+  return String(input);
+}
+```
+
+### Supabase Table Types
+
+```typescript
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+
+type Product = Tables<"products">;
+type NewProduct = TablesInsert<"products">;
+type ProductUpdate = TablesUpdate<"products">;
+```
+
+### Discriminated Unions for State
+
+```typescript
+type AsyncState<T> =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: T }
+  | { status: "error"; error: Error };
+```
+
+### Zod Schema Integration
+
+```typescript
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const formSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  price: z.coerce.number().positive("Price must be positive"),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+const form = useForm<FormValues>({
+  resolver: zodResolver(formSchema),
+  defaultValues: { name: "", email: "", price: 0 },
+});
+```
+
+## Performance Patterns
+
+### Code Splitting with Lazy Loading
+
+```typescript
+import { lazyLoad } from "@/utils/lazyLoad";
+
+// Route-level splitting (pages)
+const Shop = lazyLoad(() => import("@/pages/Shop"));
+const AdminPage = lazyLoad(() => import("@/pages/account/AdminPage"));
+```
+
+### Avoid Re-renders in Lists
+
+```typescript
+// Memoize list items when parent re-renders frequently
+const MemoizedProductCard = React.memo(ProductCard);
+
+// Use stable keys — never use array index as key for dynamic lists
+{products.map((product) => (
+  <MemoizedProductCard key={product.id} product={product} />
+))}
+```
+
+### Debounce User Input
+
+```typescript
+import { debounce } from "@/lib/utils";
+
+// Debounce search/API calls triggered by user input
+const debouncedSearch = useMemo(
+  () => debounce((query: string) => handleAddressSearch(query, country), 300),
+  [handleAddressSearch, country]
+);
+```
+
+### Avoid Unnecessary State
+
+```typescript
+// WRONG — derived state in useState
+const [fullName, setFullName] = useState("");
+useEffect(() => {
+  setFullName(`${firstName} ${lastName}`);
+}, [firstName, lastName]);
+
+// CORRECT — compute during render
+const fullName = `${firstName} ${lastName}`;
+```
+
+## React Query Patterns (TanStack v5)
+
+### Query Defaults (set in App.tsx)
+
+```typescript
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,      // 5 min
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+```
+
+### Query Keys Convention
+
+```typescript
+// Entity-based keys for predictable invalidation
+["products"]                          // all products
+["products", productId]               // single product
+["products", "category", category]    // products by category
+["cart", userId]                      // user's cart
+["favorites", userId]                 // user's favorites
+["profile", userId]                   // user profile
+```
+
+### Optimistic Updates
+
+```typescript
+const mutation = useMutation({
+  mutationFn: updateProduct,
+  onMutate: async (newData) => {
+    await queryClient.cancelQueries({ queryKey: ["products", newData.id] });
+    const previous = queryClient.getQueryData(["products", newData.id]);
+    queryClient.setQueryData(["products", newData.id], newData);
+    return { previous };
+  },
+  onError: (_err, _vars, context) => {
+    queryClient.setQueryData(["products", context?.previous?.id], context?.previous);
+  },
+  onSettled: () => {
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+  },
+});
+```
+
+## Error Handling
+
+### Async/Await Pattern
+
+```typescript
+// Always wrap async operations with try/catch
+const fetchData = async () => {
+  try {
+    const { data, error } = await supabase.from("products").select("*");
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("Failed to fetch:", error);
+    toast({ variant: "destructive", title: "Error", description: "Failed to load data" });
+    throw error; // re-throw for React Query or parent to handle
+  }
+};
+```
+
+### Error Boundaries (for component tree errors)
+
+```typescript
+// Wrap critical sections with error boundaries
+<ErrorBoundary fallback={<ErrorFallback />}>
+  <ProductList />
+</ErrorBoundary>
+```
+
+## Tailwind + shadcn/ui Conventions
+
+```typescript
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+// Use cn() to merge conditional classes
+<div className={cn("p-4 rounded-lg", isActive && "bg-primary/10", className)} />
+
+// Use shadcn variants, don't reinvent
+<Button variant="destructive" size="sm">Delete</Button>
+```
+
+## File Organization Rules
+
+| Directory | Purpose | Naming |
+|-----------|---------|--------|
+| `src/pages/` | Route-level components | PascalCase, default export |
+| `src/components/` | Reusable UI components | PascalCase |
+| `src/components/ui/` | shadcn primitives (don't edit) | lowercase |
+| `src/hooks/` | Custom hooks | `use` prefix, camelCase |
+| `src/contexts/` | React Context providers | PascalCase + `Context` suffix |
+| `src/lib/` | Pure utility functions | camelCase |
+| `src/models/` | TypeScript type definitions | PascalCase |
+| `src/integrations/` | Third-party API clients | lowercase directories |

@@ -136,15 +136,15 @@ export const OrderDetailsDialog = ({
             
             <div className="bg-muted/50 p-4 rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">Paiement</p>
-              <Badge variant={order.payment_status === "paid" ? "default" : "outline"}>
-                {order.payment_status === "paid" ? "✓ Payé" : order.payment_status}
+              <Badge variant={order.payment_status === "succeeded" || order.payment_status === "paid" ? "default" : "outline"}>
+                {order.payment_status === "succeeded" || order.payment_status === "paid" ? "✓ Payé" : order.payment_status}
               </Badge>
             </div>
           </div>
 
           {/* Update Status */}
           {onStatusUpdate && (
-            <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 bg-muted/30 rounded-lg">
               <span className="text-sm font-medium">Modifier le statut:</span>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-40">
@@ -171,12 +171,12 @@ export const OrderDetailsDialog = ({
           {/* Tracking Info */}
           {order.tracking_number && (
             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-muted-foreground mb-1 flex items-center gap-2">
                     <Truck className="h-4 w-4" /> Numéro de suivi
                   </p>
-                  <code className="font-mono text-lg bg-background px-3 py-1 rounded">
+                  <code className="font-mono text-lg bg-background px-3 py-1 rounded break-all">
                     {order.tracking_number}
                   </code>
                 </div>
@@ -208,10 +208,10 @@ export const OrderDetailsDialog = ({
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 📄 Étiquette d'expédition
               </h3>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <Button 
                   onClick={() => window.open(order.shipment!.label_url!, "_blank")}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
                   Télécharger l'étiquette (PDF 4x6)
@@ -321,9 +321,9 @@ export const OrderDetailsDialog = ({
                 </h3>
                 <div className="space-y-2">
                   {parsedItems.map((item: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-                      <div>
-                        <p className="font-medium">{item.description || item.name || "Article"}</p>
+                    <div key={index} className="flex justify-between items-center p-3 bg-muted/50 rounded-lg gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{item.description || item.name || "Article"}</p>
                         <p className="text-sm text-muted-foreground">Qté: {item.quantity}</p>
                       </div>
                       <p className="font-semibold">

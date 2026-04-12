@@ -1,0 +1,205 @@
+---
+description: Vite 5 best practices - configuration, environment variables, build optimization, code splitting, and dev server for this project
+globs: vite.config.ts,src/vite-env.d.ts,.env*,index.html,src/main.tsx
+alwaysApply: false
+---
+
+# Vite 5 Best Practices
+
+## Project Config
+
+Config file: `vite.config.ts` — uses SWC plugin (faster than Babel), terser minification, vendor chunk splitting.
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+
+export default defineConfig(({ mode }) => ({
+  server: { host: "::", port: 8080 },
+  plugins: [react()],
+  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+  build: {
+    sourcemap: mode === "development",
+    minify: "terser",
+    terserOptions: {
+      compress: { drop_console: mode === "production", drop_debugger: mode === "production" },
+    },
+  },
+}));
+```
+
+## Environment Variables
+
+### Naming Convention
+
+```
+VITE_*    → exposed to client bundle (import.meta.env.VITE_*)
+NO PREFIX → server-only, never leaked to browser
+```
+
+### Usage in Code
+
+```typescript
+// Client-side access
+const apiUrl = import.meta.env.VITE_API_URL;
+const isDev = import.meta.env.DEV;        // boolean
+const isProd = import.meta.env.PROD;       // boolean
+const mode = import.meta.env.MODE;         // "development" | "production"
+const baseUrl = import.meta.env.BASE_URL;  // from base config
+```
+
+### File Loading Priority (highest wins)
+
+1. `.env.[mode].local` (e.g. `.env.production.local`) — gitignored
+2. `.env.[mode]` (e.g. `.env.production`)
+3. `.env.local` — gitignored
+4. `.env`
+
+### TypeScript IntelliSense for Env Vars
+
+Add to `src/vite-env.d.ts`:
+
+```typescript
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITE_MAPBOX_TOKEN: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+**Current issue**: This project hardcodes Supabase URL/key and Mapbox token in source files instead of using `import.meta.env`. When migrating to env vars, update `src/integrations/supabase/client.ts` and `src/integrations/mapbox/client.ts`.
+
+## Build Optimization
+
+### Code Splitting Strategy
+
+```typescript
+// Route-based splitting (primary strategy)
+const Shop = React.lazy(() => import("./pages/Shop"));
+const AdminPage = React.lazy(() => import("./pages/account/AdminPage"));
+
+// Vendor chunk splitting (already configured)
+import { splitVendorChunkPlugin } from "vite";
+// Separates node_modules into vendor chunks for better caching
+```
+
+### Manual Chunk Configuration
+
+```typescript
+build: {
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        // Group large libraries into dedicated chunks
+        "react-vendor": ["react", "react-dom", "react-router-dom"],
+        "supabase": ["@supabase/supabase-js"],
+        "ui": ["@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "lucide-react"],
+        "query": ["@tanstack/react-query"],
+      },
+    },
+  },
+},
+```
+
+### Dependency Pre-Bundling
+
+```typescript
+optimizeDeps: {
+  include: [
+    "react", "react-dom", "react-router-dom",
+    "@tanstack/react-query", "@supabase/supabase-js",
+    "framer-motion", "lucide-react",
+  ],
+  // force: true rebuilds on every dev start (disable in CI)
+},
+```
+
+## Dev Server
+
+### Port and Host
+
+```typescript
+server: {
+  host: "::",     // listen on all interfaces (IPv4 + IPv6)
+  port: 8080,
+  strictPort: true, // fail if port is taken (don't silently increment)
+},
+```
+
+### Proxy for API Calls (if needed)
+
+```typescript
+server: {
+  proxy: {
+    "/api": {
+      target: "http://localhost:54321",  // Supabase local
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/api/, ""),
+    },
+  },
+},
+```
+
+## Performance Rules
+
+### Avoid Large Barrel Exports
+
+```typescript
+// WRONG — imports the entire library even if you use one icon
+import * as Icons from "lucide-react";
+
+// CORRECT — tree-shakeable named imports
+import { ShoppingCart, Heart, User } from "lucide-react";
+```
+
+### Dynamic Imports for Heavy Libraries
+
+```typescript
+// Load recharts only on admin dashboard
+const Chart = React.lazy(() => import("@/components/ui/chart"));
+
+// Load framer-motion only when animations are needed
+const AnimatedSection = React.lazy(() => import("@/components/AnimatedSection"));
+```
+
+### CSS Optimization
+
+```typescript
+build: {
+  cssCodeSplit: true,    // split CSS per async chunk (already enabled)
+},
+```
+
+### Asset Handling
+
+```typescript
+// Vite handles static assets automatically
+// Images < 4KB are inlined as base64
+// Use import for assets to get hashed URLs:
+import logo from "@/assets/logo.svg"; // becomes /assets/logo-abc123.svg
+```
+
+## Scripts Reference
+
+| Script | Command | Purpose |
+|--------|---------|---------|
+| `npm run dev` | `vite` | Dev server on port 8080 with HMR |
+| `npm run build` | `vite build` | Production build (minified, no console) |
+| `npm run build:dev` | `vite build --mode development` | Dev build (sourcemaps, console kept) |
+| `npm run preview` | `vite preview` | Preview production build locally |
+| `npm run lint` | `eslint .` | Run ESLint |
+
+## Common Pitfalls
+
+- `import.meta.env` values are **statically replaced** at build time — you cannot destructure them dynamically
+- Don't use `process.env` in client code — Vite uses `import.meta.env`
+- The `terser` package must be in dependencies (not devDependencies) when using `minify: "terser"`
+- `optimizeDeps.force: true` slows dev startup — disable it once dep pre-bundling is stable
+- Vite timestamp cache files (`vite.config.ts.timestamp-*.mjs`) should be gitignored

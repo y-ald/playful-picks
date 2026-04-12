@@ -101,7 +101,30 @@
     "name": "Full Name",
     "createAccount": "Create Account",
     "alreadyHaveAccount": "Already have an account? Sign in",
-    "dontHaveAccount": "Don't have an account? Sign up"
+    "dontHaveAccount": "Don't have an account? Sign up",
+    "emailOrPhone": "Email or phone",
+    "emailOrPhonePlaceholder": "name@email.com or +1 514...",
+    "continue": "Continue",
+    "back": "Back",
+    "or": "or",
+    "magicLink": "Send me a magic link",
+    "magicLinkSent": "Check your email",
+    "magicLinkDescription": "We sent a login link to your email address. Click it to sign in instantly.",
+    "verifyCode": "Verify code",
+    "resendCode": "Resend code",
+    "codeSent": "Code sent!",
+    "linkSent": "Link sent!",
+    "accountCreated": "Account created!",
+    "checkEmail": "Check your email to verify your account.",
+    "passwordWeak": "Password too weak",
+    "passwordRequirements": "Please meet all security requirements.",
+    "strengthWeak": "Weak",
+    "strengthMedium": "Medium",
+    "strengthStrong": "Strong",
+    "detected": {
+      "email": "Email",
+      "phone": "Phone"
+    }
   },
   "cart": {
     "title": "Shopping Cart",

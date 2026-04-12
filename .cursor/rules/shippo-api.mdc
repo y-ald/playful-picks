@@ -1,0 +1,335 @@
+---
+description: Shippo Shipping API reference - endpoints, request/response shapes for shipments, rates, transactions (labels), and tracking used in supabase edge functions
+globs: supabase/functions/shipping/**,src/components/*Shipping*,src/hooks/usePostPaymentProcessing*,src/hooks/useCheckoutForm*,src/lib/calculateParcelSize*
+alwaysApply: false
+---
+
+# Shippo Shipping API Reference
+
+Base URL: `https://api.goshippo.com`
+API Version: `2018-02-08`
+Docs: https://docs.goshippo.com/shippoapi/public-api/overview
+
+## Project Usage
+
+- Edge Function: `supabase/functions/shipping/api.ts`
+- Auth: `Authorization: ShippoToken ${SHIPPO_API_KEY}` (Deno env var)
+- Version header: `SHIPPO-API-VERSION: 2018-02-08`
+- All objects are **immutable/disposable** (cannot be updated after creation)
+- Functions: `createShipment`, `getRates`, `createLabel`, `trackShipment`
+
+## Authentication
+
+All requests require:
+```
+Authorization: ShippoToken <API_TOKEN>
+Content-Type: application/json
+```
+TLS 1.2+ required. Token found at https://goshippo.com/user/apikeys/
+
+## Endpoints Used in Project
+
+### 1. POST /shipments - Create Shipment & Get Rates
+
+Creates a shipment and automatically returns available rates.
+
+#### Required Fields
+
+```typescript
+interface CreateShipmentRequest {
+  address_from: ShippoAddress;     // sender
+  address_to: ShippoAddress;       // recipient
+  parcels: ShippoParcel[];         // package dimensions/weight
+  // Optional
+  metadata?: string;               // max 100 chars
+  shipment_date?: string;          // ISO 8601: "2021-03-22T12:00:00Z"
+  carrier_accounts?: string[];     // filter rates to specific carriers
+  async?: boolean;                 // async processing
+  extra?: ShipmentExtra;           // insurance, signature, COD, etc.
+}
+```
+
+#### Address Object
+
+```typescript
+interface ShippoAddress {
+  name: string;                    // required for purchase
+  company?: string;
+  street1: string;                 // required for purchase
+  street2?: string;
+  street3?: string;                // USPS intl, UPS only
+  city: string;                    // required for purchase
+  state: string;                   // required for purchase (US/CA/AU)
+  zip: string;                     // required for purchase
+  country: string;                 // ISO 3166-1 alpha-2 (e.g. "US", "CA", "FR")
+  phone?: string;
+  email?: string;
+  is_residential?: boolean;
+}
+```
+
+#### Parcel Object
+
+```typescript
+interface ShippoParcel {
+  length: string;                  // e.g. "10"
+  width: string;
+  height: string;
+  distance_unit: "cm" | "in" | "ft" | "mm" | "m" | "yd";
+  weight: string;                  // e.g. "5"
+  mass_unit: "g" | "oz" | "lb" | "kg";
+  template?: string;               // carrier parcel template token
+  metadata?: string;
+}
+```
+
+#### Response (Shipment Object)
+
+```typescript
+interface ShipmentResponse {
+  object_id: string;
+  object_created: string;
+  object_updated: string;
+  object_owner: string;
+  status: "WAITING" | "QUEUED" | "SUCCESS" | "ERROR";
+  address_from: ShippoAddress;
+  address_to: ShippoAddress;
+  parcels: ShippoParcel[];
+  rates: Rate[];                   // automatically calculated
+  messages: Message[];
+  metadata: string;
+  tracking_number?: string;
+  carrier?: string;
+}
+```
+
+### 2. Rate Object (returned in shipment.rates[])
+
+```typescript
+interface Rate {
+  object_id: string;               // use this to create a transaction/label
+  object_created: string;
+  amount: string;                  // price in origin currency (e.g. "6.95")
+  currency: string;                // e.g. "USD"
+  amount_local: string;            // price in destination currency
+  currency_local: string;
+  provider: string;                // carrier name (e.g. "USPS")
+  provider_image_75: string;       // carrier logo URL
+  provider_image_200: string;
+  servicelevel: {
+    name: string;                  // e.g. "Priority Mail"
+    token: string;                 // e.g. "usps_priority"
+    terms: string;
+  };
+  estimated_days: number;          // transit days
+  duration_terms?: string;
+  carrier_account: string;
+  zone?: string;
+  arrives_by?: string;
+  messages: Message[];
+  test: boolean;
+}
+```
+
+**Note**: Rates are valid for 7 days. Only rates < 7 days old can be used to purchase labels.
+
+### 3. POST /transactions - Create Label (Purchase)
+
+Purchases a shipping label using a rate ID.
+
+#### Request (Rate-based)
+
+```typescript
+interface CreateTransactionRequest {
+  rate: string;                    // rate object_id from shipment
+  label_file_type?: "PNG" | "PDF" | "PDF_4x6" | "PDF_4x8" | "PDF_A4" | "PDF_A5" | "PDF_A6" | "ZPLII";
+  metadata?: string;               // max 100 chars (must be string, not object)
+  async?: boolean;
+}
+```
+
+#### Request (Instant label - no prior shipment needed)
+
+```typescript
+interface CreateInstantTransactionRequest {
+  shipment: CreateShipmentRequest;
+  carrier_account: string;
+  servicelevel_token: string;
+  label_file_type?: string;
+  metadata?: string;
+}
+```
+
+#### Response (Transaction Object)
+
+```typescript
+interface TransactionResponse {
+  object_id: string;
+  object_state: "VALID" | "INVALID";
+  status: "WAITING" | "QUEUED" | "SUCCESS" | "ERROR" | "REFUNDED" | "REFUNDPENDING" | "REFUNDREJECTED";
+  label_url?: string;              // URL to PDF/PNG label (only on SUCCESS)
+  commercial_invoice_url?: string; // for international shipments
+  tracking_number?: string;        // carrier tracking number (only on SUCCESS)
+  tracking_status?: "UNKNOWN" | "PRE_TRANSIT" | "TRANSIT" | "DELIVERED" | "RETURNED" | "FAILURE";
+  tracking_url_provider?: string;  // carrier tracking page URL
+  eta?: string;
+  label_file_type: string;
+  rate: string | Rate;
+  parcel?: string;
+  messages: Message[];
+  metadata: string;
+  test: boolean;
+  created_by?: any;
+  qr_code_url?: string;           // if QR code was requested
+}
+```
+
+### 4. GET /tracks/{Carrier}/{TrackingNumber} - Track Shipment
+
+Returns tracking status for any shipment (not just Shippo-purchased).
+
+#### Path Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `Carrier` | string | Carrier token (e.g. `usps`, `fedex`, `ups`, `dhl_express`) |
+| `TrackingNumber` | string | Carrier tracking number |
+
+#### Response (Track Object)
+
+```typescript
+interface TrackResponse {
+  carrier: string;
+  tracking_number: string;
+  address_from?: { city: string; state: string; zip: string; country: string };
+  address_to?: { city: string; state: string; zip: string; country: string };
+  eta?: string;
+  original_eta?: string;
+  servicelevel?: {
+    name: string;
+    token: string;
+  };
+  tracking_status: TrackingEvent;  // latest status
+  tracking_history: TrackingEvent[]; // full history (oldest first)
+  transaction?: string;            // object_id if purchased via Shippo
+  metadata?: string;
+  messages: Message[];
+}
+
+interface TrackingEvent {
+  object_id: string;
+  object_created: string;
+  object_updated: string;
+  status: "UNKNOWN" | "PRE_TRANSIT" | "TRANSIT" | "DELIVERED" | "RETURNED" | "FAILURE";
+  substatus?: {
+    code: string;                  // e.g. "information_received", "out_for_delivery"
+    text: string;
+    action_required: boolean;
+  };
+  status_date?: string;           // carrier scan timestamp (UTC)
+  status_details: string;         // human-readable description
+  location?: {
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+  };
+}
+```
+
+### 5. POST /tracks - Register Tracking Webhook
+
+Registers a webhook for tracking status change notifications.
+
+```typescript
+interface RegisterTrackRequest {
+  carrier: string;
+  tracking_number: string;
+  metadata?: string;
+}
+```
+
+## Common Types
+
+```typescript
+interface Message {
+  source: string;                  // e.g. "UPS", "Shippo"
+  code: string;
+  text: string;
+}
+```
+
+## Supported Carriers (commonly used)
+
+| Token | Carrier |
+|-------|---------|
+| `usps` | USPS |
+| `ups` | UPS |
+| `fedex` | FedEx |
+| `dhl_express` | DHL Express |
+| `dhl_ecommerce` | DHL eCommerce |
+| `canada_post` | Canada Post |
+| `australia_post` | Australia Post |
+| `royal_mail` | Royal Mail |
+| `chronopost` | Chronopost |
+| `colissimo` | Colissimo |
+| `dpd_de` | DPD Germany |
+| `dpd_uk` | DPD UK |
+| `bring` | Bring / Posten Norge |
+| `mondial_relay` | Mondial Relay |
+| `poste_italiane` | Poste Italiane |
+
+## Shipment Extra Options (commonly used)
+
+```typescript
+interface ShipmentExtra {
+  signature_confirmation?: "STANDARD" | "ADULT" | "CERTIFIED" | "INDIRECT";
+  insurance?: {
+    amount: string;
+    currency: string;
+    content: string;
+    provider?: "FEDEX" | "UPS" | "ONTRAC"; // omit for Shippo/XCover insurance
+  };
+  is_return?: boolean;
+  saturday_delivery?: boolean;
+  authority_to_leave?: boolean;
+  billing?: {
+    type: "SENDER" | "RECIPIENT" | "THIRD_PARTY" | "COLLECT";
+    account?: string;
+    zip?: string;
+    country?: string;
+  };
+  reference_1?: string;           // printed on label, max 50 chars
+  reference_2?: string;
+  delivery_instructions?: string; // FedEx/OnTrac, max 500 chars
+  bypass_address_validation?: boolean; // USPS, UPS, LaserShip
+  COD?: {                          // UPS only
+    amount: string;
+    currency: string;
+    payment_method?: "SECURED_FUNDS" | "CASH" | "ANY";
+  };
+  dangerous_goods?: {
+    contains: boolean;
+  };
+  dry_ice?: {
+    contains_dry_ice: boolean;
+    weight: string;                // kg
+  };
+}
+```
+
+## Pagination
+
+All list endpoints support: `?results=25` (max 100 per page)
+
+## Error Handling
+
+- HTTP 400: Bad request (validation errors in `messages[]`)
+- HTTP 401: Invalid or missing API token
+- HTTP 404: Object not found
+- HTTP 500: Server error (retry with backoff)
+
+## Test Mode
+
+Use your test API token. For tracking tests, use Shippo's predefined test tracking numbers.
+See: https://docs.goshippo.com/docs/tracking/tracking/

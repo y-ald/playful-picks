@@ -1,6 +1,7 @@
 import { fetchWithTimeout } from "./utils.ts";
 
 const SHIPPO_API_KEY = Deno.env.get("SHIPPO_API_KEY") || "";
+if (!SHIPPO_API_KEY) console.error("SHIPPO_API_KEY is not set - shipping operations will fail");
 
 const SHIPPO_API_URL = "https://api.goshippo.com";
 
@@ -9,11 +10,6 @@ const headers = {
   "Content-Type": "application/json",
 };
 
-/**
- * Creates a shipment via Shippo API
- * @param shipmentData - The shipment data including addresses and parcel
- * @returns The created shipment object
- */
 const createShipment = async (shipmentData: any) => {
   const response = await fetchWithTimeout(`${SHIPPO_API_URL}/shipments`, {
     method: "POST",
@@ -29,34 +25,89 @@ const createShipment = async (shipmentData: any) => {
 };
 
 const getRates = async (shipment: any) => {
-  const response = await fetchWithTimeout(`${SHIPPO_API_URL}/shipments`, {
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1500;
+  const payload = { ...shipment, async: false };
+
+  console.log("getRates payload:", JSON.stringify(payload, null, 2));
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    const response = await fetchWithTimeout(`${SHIPPO_API_URL}/shipments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`getRates attempt ${attempt} failed (${response.status}):`, errorBody);
+      if (attempt === MAX_RETRIES) throw new Error(`Failed to get rates: ${errorBody}`);
+      await new Promise((r) => setTimeout(r, RETRY_DELAY * attempt));
+      continue;
+    }
+
+    const shipmentData = await response.json();
+    console.log(`getRates attempt ${attempt}: status=${shipmentData.status}, rates=${shipmentData.rates?.length ?? 0}, messages=${JSON.stringify(shipmentData.messages || [])}`);
+
+    if (shipmentData.rates && shipmentData.rates.length > 0) {
+      return shipmentData.rates;
+    }
+
+    if (attempt < MAX_RETRIES) {
+      console.log(`Rates empty on attempt ${attempt}, retrying in ${RETRY_DELAY * attempt}ms...`);
+      await new Promise((r) => setTimeout(r, RETRY_DELAY * attempt));
+    }
+  }
+
+  return [];
+};
+
+const validateAddress = async (address: any) => {
+  const response = await fetchWithTimeout(`${SHIPPO_API_URL}/addresses`, {
     method: "POST",
     headers,
-    body: JSON.stringify(shipment),
+    body: JSON.stringify({ ...address, validate: true }),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to get rates");
+    const errorText = await response.text();
+    console.error("Shippo address validation error:", errorText);
+    throw new Error("Address validation request failed");
   }
 
-  const shipmentData = await response.json();
-  return shipmentData.rates;
+  const result = await response.json();
+  const validation = result.validation_results || {};
+
+  return {
+    is_valid: validation.is_valid ?? false,
+    messages: (validation.messages || []).map((m: any) => ({
+      code: m.code,
+      text: m.text,
+      type: m.type,
+    })),
+    suggested_address: validation.is_valid ? null : {
+      street1: result.street1 || address.street1,
+      street2: result.street2 || "",
+      city: result.city || address.city,
+      state: result.state || address.state,
+      zip: result.zip || address.zip,
+      country: result.country || address.country,
+    },
+  };
 };
 
 const createLabel = async (transaction: any) => {
   console.log("createLabel request", JSON.stringify(transaction));
   
-  // Convert metadata to string if it's an object (Shippo requires string)
   const metadata = typeof transaction.metadata === 'object' 
     ? JSON.stringify(transaction.metadata)
     : transaction.metadata;
   
-  // Add label format for 4x6 label size (standard shipping label)
   const requestBody = {
     ...transaction,
     metadata,
     label_file_type: "PDF",
-    label_format: "PDF_4x6", // 4x6 inch label size for standard thermal printers
+    label_format: "PDF_4x6",
   };
   
   const response = await fetchWithTimeout(`${SHIPPO_API_URL}/transactions`, {
@@ -92,4 +143,4 @@ const trackShipment = async (tracking: any) => {
   return await response.json();
 };
 
-export { createShipment, getRates, createLabel, trackShipment };
+export { createShipment, getRates, createLabel, trackShipment, validateAddress };

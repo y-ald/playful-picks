@@ -1,0 +1,292 @@
+---
+description: Supabase JS v2 best practices - auth, queries, realtime, Edge Functions, error handling, and security patterns for this project
+globs: src/integrations/supabase/**,src/contexts/**,src/hooks/**,supabase/functions/**
+alwaysApply: false
+---
+
+# Supabase JS v2 Best Practices
+
+## Client Setup
+
+The Supabase client is at `src/integrations/supabase/client.ts` with generated types at `types.ts`.
+
+```typescript
+import { supabase } from "@/integrations/supabase/client";
+import type { Database, Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+```
+
+### Type Safety
+
+- Always use the generated `Database` type with `createClient<Database>()`
+- Use `Tables<"table_name">` for row types, `TablesInsert<"table_name">` for inserts, `TablesUpdate<"table_name">` for updates
+- Regenerate types after schema changes: `supabase gen types typescript --local > src/integrations/supabase/types.ts`
+
+## Query Patterns
+
+### Select with Type Inference
+
+```typescript
+// Typed select - let Supabase infer the return type
+const { data, error } = await supabase
+  .from("products")
+  .select("id, name, price, category")
+  .eq("category", "toys")
+  .order("created_at", { ascending: false });
+
+// With relations (foreign key joins)
+const { data, error } = await supabase
+  .from("cart_items")
+  .select("*, product:products(*)")
+  .eq("user_id", userId);
+```
+
+### Error Handling - ALWAYS Destructure and Check
+
+```typescript
+// CORRECT - always handle both data and error
+const { data, error } = await supabase.from("products").select("*").eq("id", id).single();
+if (error) {
+  console.error("Failed to fetch product:", error.message);
+  throw error;
+}
+
+// WRONG - ignoring error
+const { data } = await supabase.from("products").select("*"); // error silently swallowed
+```
+
+### Use .maybeSingle() for Optional Rows
+
+```typescript
+// When the row might not exist (no error if 0 rows)
+const { data, error } = await supabase
+  .from("cart_items")
+  .select("*")
+  .eq("product_id", productId)
+  .eq("user_id", userId)
+  .maybeSingle(); // returns null if not found, no error
+
+// .single() throws if 0 or 2+ rows — use only when exactly 1 row is guaranteed
+```
+
+### Batch Operations - Prefer Single Queries Over Loops
+
+```typescript
+// CORRECT - single query with .in()
+const { data } = await supabase.from("products").select("*").in("id", productIds);
+
+// WRONG - N+1 queries in a loop
+for (const id of productIds) {
+  const { data } = await supabase.from("products").select("*").eq("id", id).single();
+}
+```
+
+### Upsert for Insert-or-Update
+
+```typescript
+const { error } = await supabase
+  .from("profiles")
+  .upsert({ id: userId, first_name: "John" }, { onConflict: "id" });
+```
+
+## Authentication
+
+### Auth Listener Setup (do once at app root)
+
+```typescript
+// Set up auth state listener — returns cleanup function
+const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+  // event: "SIGNED_IN" | "SIGNED_OUT" | "TOKEN_REFRESHED" | "USER_UPDATED" | "PASSWORD_RECOVERY"
+  handleAuthChange(session);
+});
+
+// Cleanup on unmount
+return () => subscription?.unsubscribe();
+```
+
+### Session Management
+
+```typescript
+// Get current session (reads from memory, fast)
+const { data: { session } } = await supabase.auth.getSession();
+
+// Get current user (makes network request to verify)
+const { data: { user } } = await supabase.auth.getUser();
+
+// Prefer getSession() for frequent checks, getUser() for verified identity
+// In this project: AuthContext uses getSession() + onAuthStateChange listener
+```
+
+### Auth Performance Rules
+
+- Call `supabase.auth.getUser()` sparingly — it makes a network request every time
+- Cache user data in context/state after first fetch (this project uses `useAuthStatus` singleton)
+- Use `supabase.auth.getSession()` for quick session checks (reads from local storage)
+- Never call `getUser()` inside render or frequently-called callbacks
+
+### Sign Out
+
+```typescript
+const { error } = await supabase.auth.signOut();
+// Also clear local caches: localStorage, React Query, context state
+```
+
+## Realtime Subscriptions
+
+### Channel Setup Pattern
+
+```typescript
+useEffect(() => {
+  const channel = supabase
+    .channel("unique-channel-name") // must be unique per subscription
+    .on(
+      "postgres_changes",
+      {
+        event: "*",       // or "INSERT" | "UPDATE" | "DELETE"
+        schema: "public",
+        table: "cart_items",
+        filter: `user_id=eq.${userId}`,  // server-side filter to reduce traffic
+      },
+      (payload) => {
+        // payload.new, payload.old, payload.eventType
+        refetchData();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel); // ALWAYS clean up
+  };
+}, [userId]); // re-subscribe when userId changes
+```
+
+### Realtime Rules
+
+- Always clean up channels in useEffect return
+- Use server-side filters (`filter:`) to minimize payload
+- Use unique channel names to avoid conflicts
+- Don't subscribe to entire tables without filters in production
+- Prefer invalidating React Query cache over manual state updates
+
+## Edge Functions (Deno)
+
+Edge Functions live in `supabase/functions/`. They run on Deno.
+
+### Invoking from Client
+
+```typescript
+const { data, error } = await supabase.functions.invoke("function-name", {
+  body: { action: "actionName", payload: { /* ... */ } },
+});
+if (error) throw error;
+```
+
+### Edge Function Structure
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  // CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { action, payload } = await req.json();
+
+    // Create Supabase client with service role for admin operations
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // ... handle action
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
+```
+
+### Edge Function Environment Variables
+
+```typescript
+// Available automatically in Edge Functions:
+Deno.env.get("SUPABASE_URL")
+Deno.env.get("SUPABASE_ANON_KEY")
+Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")  // admin access — never expose to client
+
+// Custom secrets (set via supabase secrets set):
+Deno.env.get("SHIPPO_API_KEY")
+Deno.env.get("STRIPE_SECRET_KEY")
+```
+
+### Edge Function Best Practices
+
+- Use `SUPABASE_SERVICE_ROLE_KEY` only in Edge Functions, never in browser code
+- Always return proper CORS headers
+- Validate inputs before processing
+- Use `fetchWithTimeout` for external API calls (as in `shipping/utils.ts`)
+- Keep functions focused — one concern per function
+- Handle errors with structured JSON responses
+
+## React Query + Supabase Integration
+
+### Query Hook Pattern (project standard)
+
+```typescript
+import { useSupabaseQuery } from "@/hooks/useDataFetching";
+
+function useProducts() {
+  return useSupabaseQuery(
+    ["products"],           // query key
+    "products",             // table name (for batching)
+    () => supabase.from("products").select("*").order("created_at", { ascending: false }),
+    { staleTime: 5 * 60 * 1000 }
+  );
+}
+```
+
+### Mutation Pattern
+
+```typescript
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+function useDeleteProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      const { error } = await supabase.from("products").delete().eq("id", productId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+```
+
+### Cache Invalidation After Auth Changes
+
+```typescript
+// Invalidate user-specific caches when auth state changes
+queryClient.invalidateQueries({ queryKey: ["cart"] });
+queryClient.invalidateQueries({ queryKey: ["favorites"] });
+queryClient.invalidateQueries({ queryKey: ["profile"] });
+```
+
+## Security Checklist
+
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` in client code
+- Supabase anon key is safe for client (it's public by design, RLS enforces access)
+- Always use Row Level Security (RLS) on tables accessed from the browser
+- Use Edge Functions for operations requiring elevated privileges
+- Validate all user inputs server-side (Edge Functions) before database operations
+- Use `.eq("user_id", userId)` filters on queries to scope data to current user

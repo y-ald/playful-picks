@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const resendApiKey = Deno.env.get("RESEND_API_KEY");
+if (!resendApiKey) console.error("RESEND_API_KEY is not set - emails will fail");
+const resend = new Resend(resendApiKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Sending email to:", to);
 
     const emailResponse = await resend.emails.send({
-      from: "Kaia Kids <onboarding@resend.dev>",
+      from: Deno.env.get("RESEND_FROM_EMAIL") || "Kaia Kids <onboarding@resend.dev>",
       to: [to],
       subject,
       html,

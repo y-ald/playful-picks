@@ -1,4 +1,3 @@
-import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import AgeCategories from '../components/AgeCategories';
 import NewArrivals from '../components/NewArrivals';
@@ -6,7 +5,6 @@ import NewArrivals from '../components/NewArrivals';
 const Index = () => {
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       <Hero />
       <div className="py-16 bg-white">
         <AgeCategories />

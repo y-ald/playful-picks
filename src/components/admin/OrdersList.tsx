@@ -118,13 +118,13 @@ export const OrdersList = () => {
   };
 
   const getPaymentStatusBadge = (status: string) => {
-    const isPaid = status === "paid";
+    const isPaid = status === "succeeded" || status === "paid";
     return (
       <Badge 
         variant={isPaid ? "default" : "outline"} 
         className={isPaid ? "bg-green-500/10 text-green-600 border-green-500/30" : ""}
       >
-        {status === "paid" ? "✓ Payé" : status}
+        {isPaid ? "✓ Payé" : status}
       </Badge>
     );
   };

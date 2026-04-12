@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { Button } from "./ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import OptimizedProductCard from "./OptimizedProductCard";
+import ProductCard from "./ProductCard";
 
 interface Product {
   id: string;
@@ -44,7 +44,7 @@ const FavoriteProductCard = memo(({ product }: FavoriteProductCardProps) => {
 
   return (
     <div className="space-y-3">
-      <OptimizedProductCard product={product} />
+      <ProductCard product={product} />
       <Button
         variant="outline"
         className="w-full flex items-center justify-center text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 mt-2"

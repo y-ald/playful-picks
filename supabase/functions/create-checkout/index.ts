@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -24,39 +24,82 @@ serve(async (req) => {
       userId,
     });
 
-    // Default to English if no language is provided
     const userLanguage = language || "en";
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });
 
-    // Create line items from cart items
-    const lineItems = cartItems.map((item: any) => ({
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: item.product.name,
-          images: item.product.image_url ? [item.product.image_url] : [],
-          metadata: {
-            product_id: item.product.id, // Store product ID for inventory update
+    // Validate prices server-side by fetching from the database
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") || "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+    );
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      throw new Error("Cart is empty or invalid");
+    }
+
+    const productIds = cartItems.map((item: any) => {
+      const pid = item.product_id || item.product?.id;
+      if (!pid) {
+        console.error("Cart item missing product ID:", JSON.stringify(item));
+        throw new Error("Cart item missing product ID");
+      }
+      return pid;
+    });
+
+    console.log("Validating product IDs:", productIds);
+
+    const { data: verifiedProducts, error: dbError } = await supabase
+      .from("products")
+      .select("id, name, price, image_url, stock_quantity")
+      .in("id", productIds);
+
+    if (dbError || !verifiedProducts) {
+      console.error("DB error verifying products:", dbError);
+      throw new Error("Failed to verify product prices");
+    }
+
+    console.log(`Verified ${verifiedProducts.length} products from DB`);
+
+    const productMap = new Map(verifiedProducts.map((p: any) => [p.id, p]));
+
+    const lineItems = cartItems.map((item: any) => {
+      const itemProductId = item.product_id || item.product?.id;
+      const verified = productMap.get(itemProductId);
+      if (!verified) {
+        throw new Error(`Product not found in DB: ${itemProductId}`);
+      }
+      if (verified.stock_quantity !== null && verified.stock_quantity < item.quantity) {
+        throw new Error(`Insufficient stock for ${verified.name}`);
+      }
+      return {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: verified.name,
+            images: verified.image_url ? [verified.image_url] : [],
+            metadata: { product_id: verified.id },
           },
+          unit_amount: Math.round(verified.price * 100),
         },
-        unit_amount: Math.round(item.product.price * 100), // Convert to cents
-      },
-      quantity: item.quantity,
-    }));
+        quantity: item.quantity,
+      };
+    });
 
-    console.log("Creating Stripe session with line items:", lineItems);
+    console.log("Line items built successfully:", lineItems.length);
 
-    // Prepare metadata for webhook processing
-    // Extract only essential info to stay within Stripe's 500 char limit per field
-    const essentialCartItems = cartItems.map((item: any) => ({
-      product_id: item.product.id,
-      name: item.product.name,
-      price: item.product.price,
-      quantity: item.quantity,
-    }));
+    const essentialCartItems = cartItems.map((item: any) => {
+      const itemProductId = item.product_id || item.product?.id;
+      const verified = productMap.get(itemProductId);
+      return {
+        product_id: itemProductId,
+        name: verified?.name || item.product?.name || "Unknown",
+        price: verified?.price || item.product?.price || 0,
+        quantity: item.quantity,
+      };
+    });
     
     const essentialShippingInfo = {
       object_id: shippingRate.object_id,
@@ -82,15 +125,27 @@ serve(async (req) => {
       )}/${userLanguage}/checkout/success`,
       cancel_url: `${req.headers.get("origin")}/${userLanguage}/cart`,
       customer_email: shippingAddress.email,
-      metadata, // Pass data to webhook
-      shipping_details: {
-        name: shippingAddress.name,
-        address: {
-          line1: shippingAddress.address,
-          city: shippingAddress.city,
-          state: shippingAddress.state,
-          postal_code: shippingAddress.zipCode,
-          country: shippingAddress.country,
+      metadata: {
+        ...metadata,
+        shipping_name: shippingAddress.name,
+        shipping_email: shippingAddress.email,
+        shipping_phone: shippingAddress.phone || "",
+        shipping_address: shippingAddress.address,
+        shipping_city: shippingAddress.city,
+        shipping_state: shippingAddress.state,
+        shipping_zip: shippingAddress.zipCode,
+        shipping_country: shippingAddress.country,
+      },
+      payment_intent_data: {
+        shipping: {
+          name: shippingAddress.name,
+          address: {
+            line1: shippingAddress.address,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            postal_code: shippingAddress.zipCode,
+            country: shippingAddress.country,
+          },
         },
       },
       shipping_options: [

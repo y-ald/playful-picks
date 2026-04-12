@@ -26,7 +26,7 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <button 
-            className="md:hidden p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="md:hidden p-2 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -38,7 +38,7 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden absolute top-20 left-0 right-0 bg-white border-b border-gray-100 animate-slide-in">
           <div className="container mx-auto px-4 py-4">
-            <NavbarLinks className="flex-col space-y-4" />
+            <NavbarLinks className="flex-col space-y-4" onNavigate={() => setIsMenuOpen(false)} />
           </div>
         </div>
       )}

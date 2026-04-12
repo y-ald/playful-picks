@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import Navbar from "@/components/Navbar";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,9 +22,8 @@ const Favorites = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Navbar />
-        <div className="container mx-auto px-4 pt-24">
+      <div className="min-h-screen bg-white pt-24">
+        <div className="container mx-auto px-4">
           <div className="flex items-center mb-6">
             <Skeleton className="h-10 w-32 mr-4" />
             <Skeleton className="h-10 w-48" />
@@ -46,9 +44,8 @@ const Favorites = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <div className="container mx-auto px-4 pt-24">
+    <div className="min-h-screen bg-white pt-24">
+      <div className="container mx-auto px-4">
         <div className="flex items-center mb-6">
           <Button
             variant="outline"

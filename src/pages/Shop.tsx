@@ -1,19 +1,12 @@
-import { useState, lazy, Suspense, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Filter, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import Navbar from "@/components/Navbar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSupabaseQuery } from "@/hooks/useDataFetching";
 import { debounce } from "@/lib/utils";
-
-// Lazy load components
-const ProductCard = lazy(() => import("@/components/ProductCard"));
-const OptimizedProductCard = lazy(
-  () => import("@/components/OptimizedProductCard")
-);
+import ProductCard from "@/components/ProductCard";
 
 type Product = {
   id: string;
@@ -79,14 +72,8 @@ const Shop = () => {
   ];
   const ageRanges = ["0-2", "3-5", "6-8", "9-12"];
 
-  // Use intersection observer for product loading
-  const ProductCardComponent = window.IntersectionObserver
-    ? OptimizedProductCard
-    : ProductCard;
-
   return (
     <div className="min-h-screen bg-white">
-      <Navbar />
       <div className="container mx-auto px-4 pt-24">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-4">
@@ -107,9 +94,9 @@ const Shop = () => {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <select
-                className="border rounded-md px-3 py-2"
+                className="border rounded-md px-3 py-2 min-w-0 flex-1 sm:flex-none"
                 value={selectedCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
               >
@@ -124,7 +111,7 @@ const Shop = () => {
                 ))}
               </select>
               <select
-                className="border rounded-md px-3 py-2"
+                className="border rounded-md px-3 py-2 min-w-0 flex-1 sm:flex-none"
                 value={selectedAgeRange || ""}
                 onChange={(e) => setSelectedAgeRange(e.target.value || null)}
               >
@@ -155,19 +142,7 @@ const Shop = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products?.map((product) => (
-              <Suspense
-                key={product.id}
-                fallback={
-                  <div className="space-y-3">
-                    <Skeleton className="aspect-square w-full rounded-lg" />
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                }
-              >
-                <ProductCardComponent product={product} />
-              </Suspense>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
