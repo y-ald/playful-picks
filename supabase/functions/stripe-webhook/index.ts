@@ -113,6 +113,7 @@ serve(async (req) => {
       console.log("Order created successfully:", orderIdText);
 
       // --- ENSURE USER EXISTS & LINK ORDER ---
+      const customerEmail = session.customer_details?.email || metadata.shipping_email || "";
       let effectiveUserId = session.client_reference_id || null;
 
       if (!effectiveUserId && customerEmail) {
@@ -244,7 +245,6 @@ serve(async (req) => {
 
       // --- STEP 4: Create shipping label (independent from emails) ---
       let labelData: any = null;
-      const customerEmail = session.customer_details?.email || metadata.shipping_email || "";
       const addressFrom = {
         name: "Kaia Kids Store",
         company: "Kaia Kids",
@@ -256,17 +256,20 @@ serve(async (req) => {
         phone: "+1 514 123 4567",
       };
       const addressTo = {
-        name: shippingDetails?.name || "",
-        street1: shippingDetails?.address?.line1 || "",
+        name: shippingDetails?.name || metadata.shipping_name || "",
+        street1: shippingDetails?.address?.line1 || metadata.shipping_address || "",
         street2: shippingDetails?.address?.line2 || "",
-        city: shippingDetails?.address?.city || "",
-        state: shippingDetails?.address?.state || "",
-        zip: shippingDetails?.address?.postal_code || "",
-        country: shippingDetails?.address?.country || "",
+        city: shippingDetails?.address?.city || metadata.shipping_city || "",
+        state: shippingDetails?.address?.state || metadata.shipping_state || "",
+        zip: shippingDetails?.address?.postal_code || metadata.shipping_zip || "",
+        country: shippingDetails?.address?.country || metadata.shipping_country || "",
         email: customerEmail,
       };
 
-      if (shippingInfo?.object_id) {
+      console.log("addressTo for label:", JSON.stringify(addressTo));
+      const isAddressComplete = addressTo.street1 && addressTo.city && addressTo.state && addressTo.zip && addressTo.country;
+
+      if (shippingInfo?.object_id && isAddressComplete) {
         try {
           console.log("Creating shipping label with rate:", shippingInfo.object_id);
           
@@ -336,7 +339,11 @@ serve(async (req) => {
           console.error("Error in shipping label workflow:", labelCreationError);
         }
       } else {
-        console.warn("No shipping rate object_id found, skipping label creation");
+        if (!isAddressComplete) {
+          console.warn("Incomplete shipping address, skipping label creation. addressTo:", JSON.stringify(addressTo));
+        } else {
+          console.warn("No shipping rate object_id found, skipping label creation");
+        }
       }
 
       // --- STEP 5: Send admin email (always, regardless of label success) ---

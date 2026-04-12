@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createShipment, getRates, createLabel, trackShipment } from "./api.ts";
+import { createShipment, getRates, createLabel, trackShipment, validateAddress } from "./api.ts";
 import { corsHeaders } from "./cors.ts";
 
 serve(async (req) => {
@@ -59,6 +59,13 @@ serve(async (req) => {
             "Content-Type": "application/json",
             "SHIPPO-API-VERSION": "2018-02-08",
           },
+        });
+
+      case "validateAddress":
+        console.log("validateAddress payload", payload);
+        const validation = await validateAddress(payload);
+        return new Response(JSON.stringify(validation), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
       case "trackShipment":

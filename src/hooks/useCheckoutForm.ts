@@ -9,7 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateParcelSize } from "@/lib/calculateParcelSize";
 import { debounce } from "@/lib/utils";
 
-// Define the form schema with country-specific validations
+const CA_POSTAL_TO_PROVINCE: Record<string, string> = {
+  A: "NL", B: "NS", C: "PE", E: "NB",
+  G: "QC", H: "QC", J: "QC",
+  K: "ON", L: "ON", M: "ON", N: "ON", P: "ON",
+  R: "MB", S: "SK", T: "AB", V: "BC",
+  X: "NT", Y: "YT",
+};
+
 export const createFormSchema = (country: string) => {
   const schema: Record<string, any> = {
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -23,65 +30,50 @@ export const createFormSchema = (country: string) => {
     shipping_rate: z.string().optional(),
   };
 
-  // Add country-specific postal code validation
   switch (country) {
     case "US":
-      schema.zipCode = z
-        .string()
-        .regex(
-          /^\d{5}(-\d{4})?$/,
-          "US ZIP code must be in format 12345 or 12345-6789"
-        );
+      schema.zipCode = z.string().regex(/^\d{5}(-\d{4})?$/, "US ZIP code must be in format 12345 or 12345-6789");
       break;
     case "CA":
-      schema.zipCode = z
-        .string()
-        .regex(
-          /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
-          "Canadian postal code must be in format A1A 1A1"
-        );
+      schema.zipCode = z.string().regex(/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, "Canadian postal code must be in format A1A 1A1");
       break;
     case "GB":
-      schema.zipCode = z
-        .string()
-        .regex(
-          /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/,
-          "UK postal code must be in a valid format"
-        );
+      schema.zipCode = z.string().regex(/^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/, "UK postal code must be in a valid format");
       break;
     case "FR":
-      schema.zipCode = z
-        .string()
-        .regex(/^\d{5}$/, "French postal code must be 5 digits");
+      schema.zipCode = z.string().regex(/^\d{5}$/, "French postal code must be 5 digits");
       break;
     case "DE":
-      schema.zipCode = z
-        .string()
-        .regex(/^\d{5}$/, "German postal code must be 5 digits");
+      schema.zipCode = z.string().regex(/^\d{5}$/, "German postal code must be 5 digits");
       break;
     case "AU":
-      schema.zipCode = z
-        .string()
-        .regex(/^\d{4}$/, "Australian postal code must be 4 digits");
+      schema.zipCode = z.string().regex(/^\d{4}$/, "Australian postal code must be 4 digits");
       break;
     case "BE":
-      schema.zipCode = z
-        .string()
-        .regex(/^\d{4}$/, "Belgian postal code must be 4 digits");
+      schema.zipCode = z.string().regex(/^\d{4}$/, "Belgian postal code must be 4 digits");
       break;
     case "ES":
-      schema.zipCode = z
-        .string()
-        .regex(/^\d{5}$/, "Spanish postal code must be 5 digits");
+      schema.zipCode = z.string().regex(/^\d{5}$/, "Spanish postal code must be 5 digits");
       break;
     default:
-      schema.zipCode = z
-        .string()
-        .min(5, "Postal code must be at least 5 characters");
+      schema.zipCode = z.string().min(5, "Postal code must be at least 5 characters");
   }
 
   return z.object(schema);
 };
+
+export interface AddressValidation {
+  is_valid: boolean;
+  messages: { code: string; text: string; type: string }[];
+  suggested_address: {
+    street1: string;
+    street2: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+  } | null;
+}
 
 export const useCheckoutForm = (cartItems: any[]) => {
   const { toast } = useToast();
@@ -90,7 +82,10 @@ export const useCheckoutForm = (cartItems: any[]) => {
   const [shippingRates, setShippingRates] = useState([]);
   const [selectedRate, setSelectedRate] = useState(null);
   const [isCalculatingRates, setIsCalculatingRates] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("CA"); // Default to Canada
+  const [isValidatingAddress, setIsValidatingAddress] = useState(false);
+  const [addressValidation, setAddressValidation] = useState<AddressValidation | null>(null);
+  const skipNextValidation = useRef(false);
+  const [selectedCountry, setSelectedCountry] = useState("CA");
 
   const formSchema = createFormSchema(selectedCountry);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -108,14 +103,13 @@ export const useCheckoutForm = (cartItems: any[]) => {
     },
   });
 
-  // Update form schema when country changes
   useEffect(() => {
     form.clearErrors("zipCode");
     const currentValues = form.getValues();
     form.reset(currentValues);
   }, [selectedCountry, form]);
 
-  // Pre-fill from profile + default address when user is authenticated
+  // Pre-fill from profile + default address
   const prefilled = useRef(false);
   useEffect(() => {
     if (!userInfo?.id || prefilled.current) return;
@@ -165,12 +159,10 @@ export const useCheckoutForm = (cartItems: any[]) => {
     prefillFromProfile();
   }, [userInfo, form]);
 
-  // Handle country change
   const handleCountryChange = useCallback(
     (country: string) => {
       setSelectedCountry(country);
       form.setValue("country", country);
-      // Clear postal code when country changes to avoid validation errors
       form.setValue("zipCode", "");
     },
     [form]
@@ -182,7 +174,6 @@ export const useCheckoutForm = (cartItems: any[]) => {
         setSearchResults([]);
         return;
       }
-
       try {
         const results = await mapboxClient.forward(query, "en", country);
         setSearchResults(results.slice(0, 5));
@@ -199,80 +190,201 @@ export const useCheckoutForm = (cartItems: any[]) => {
     [searchAddress]
   );
 
-  // Handle address selection from search results
-  const handleAddressSelect = useCallback(
-    (result: any) => {
-      const properties = result.properties;
-      const context = properties.context || {};
-      console.log("address", context);
-      // Extract address components based on country
+  // Fill form fields from Mapbox feature properties + context
+  const fillFormFromFeature = useCallback(
+    (properties: any, context: any) => {
       const country = form.getValues("country");
+      const featureType = properties.feature_type || "";
 
-      // Set address fields
-      form.setValue(
-        "address",
-        properties.address || properties.full_address || ""
-      );
+      // Street address extraction:
+      // POI: properties.address = "27 Rue Couillard" (street), properties.name = "Epicerie..." (business name)
+      // address type: properties.name = "27 Rue Couillard", properties.address = "27" (just number)
+      let streetAddress = "";
+      if (featureType === "poi" && properties.address && /\d/.test(properties.address)) {
+        streetAddress = properties.address;
+      } else {
+        streetAddress = properties.name || properties.address || "";
+      }
 
-      // Set city, state, and postal code based on country format
+      if (streetAddress) {
+        form.setValue("address", streetAddress);
+      }
+
       if (context.place) {
         form.setValue("city", context.place.name || "");
       }
 
-      if (context.region) {
-        // For US and Canada, use region code; for others, use full name
-        const regionValue = ["US", "CA"].includes(country)
-          ? context.region.short_code || context.region.name || ""
-          : context.region.name || "";
+      // Province/State extraction
+      let regionValue = "";
 
-        // Ensure we have a valid value before setting it
-        if (regionValue) {
-          form.setValue("state", regionValue);
-          // Trigger validation after setting the value
-          form.trigger("state");
+      if (context.region) {
+        const rc =
+          context.region.region_code ||
+          context.region.region_code_full ||
+          context.region.short_code ||
+          "";
+
+        if (["US", "CA"].includes(country) && rc) {
+          regionValue = rc.includes("-") ? rc.split("-")[1] : rc;
         }
+        if (!regionValue) {
+          regionValue = context.region.name || "";
+        }
+      }
+
+      // Fallback: derive province from Canadian postal code first letter
+      if (!regionValue && country === "CA" && context.postcode?.name) {
+        const firstLetter = context.postcode.name.trim().toUpperCase()[0];
+        if (firstLetter && CA_POSTAL_TO_PROVINCE[firstLetter]) {
+          regionValue = CA_POSTAL_TO_PROVINCE[firstLetter];
+        }
+      }
+
+      if (regionValue) {
+        form.setValue("state", regionValue);
+        form.trigger("state");
       }
 
       if (context.postcode) {
         const postcodeValue = context.postcode.name || "";
         if (postcodeValue) {
           form.setValue("zipCode", postcodeValue);
-          // Trigger validation after setting the value
           form.trigger("zipCode");
         }
       }
 
-      // Clear search results
-      setSearchResults([]);
-
-      // Automatically calculate shipping rates if all required fields are filled
-      const requiredFields = [
-        "name",
-        "email",
-        "address",
-        "city",
-        "state",
-        "zipCode",
-        "country",
-      ];
-      const allFieldsFilled = requiredFields.every(
-        (field) => !!form.getValues(field)
-      );
-
-      if (allFieldsFilled) {
-        fetchShippingRates(form.getValues());
+      // Auto-update country from Mapbox context
+      if (context.country?.country_code) {
+        const cc = context.country.country_code;
+        if (cc !== country) {
+          form.setValue("country", cc);
+          setSelectedCountry(cc);
+        }
       }
     },
     [form]
   );
 
-  // Fetch shipping rates
+  // Handle address selection from search results
+  const handleAddressSelect = useCallback(
+    async (result: any) => {
+      const properties = result.properties;
+      const context = properties.context || {};
+
+      setSearchResults([]);
+
+      // Always call /retrieve to get the most complete context (region is often missing from /forward)
+      try {
+        const detailed = await mapboxClient.retrieve(properties.mapbox_id);
+        if (detailed?.properties) {
+          const detailedContext = detailed.properties.context || {};
+          fillFormFromFeature(
+            { ...properties, ...detailed.properties },
+            { ...context, ...detailedContext }
+          );
+        } else {
+          fillFormFromFeature(properties, context);
+        }
+      } catch (err) {
+        console.error("Mapbox retrieve error:", err);
+        fillFormFromFeature(properties, context);
+      }
+
+      // Auto-calculate if all fields are filled
+      const requiredFields = ["name", "email", "address", "city", "state", "zipCode", "country"];
+      const allFieldsFilled = requiredFields.every((field) => !!form.getValues(field));
+      if (allFieldsFilled) {
+        fetchShippingRates(form.getValues());
+      }
+    },
+    [form, fillFormFromFeature]
+  );
+
+  // Validate address via Shippo
+  const validateShippingAddress = useCallback(
+    async (values: z.infer<typeof formSchema>): Promise<boolean> => {
+      setIsValidatingAddress(true);
+      setAddressValidation(null);
+
+      try {
+        const { data, error } = await supabase.functions.invoke("shipping", {
+          body: {
+            action: "validateAddress",
+            payload: {
+              name: values.name,
+              street1: values.address,
+              city: values.city,
+              state: values.state,
+              zip: values.zipCode,
+              country: values.country,
+            },
+          },
+        });
+
+        if (error) {
+          console.error("Address validation error:", error);
+          return true;
+        }
+
+        // If suggested address is the same as entered, skip the warning
+        if (!data.is_valid && data.suggested_address) {
+          const s = data.suggested_address;
+          const normalize = (v: string) => (v || "").trim().toLowerCase();
+          const isSameAddress =
+            normalize(s.street1) === normalize(values.address) &&
+            normalize(s.city) === normalize(values.city) &&
+            normalize(s.zip) === normalize(values.zipCode) &&
+            normalize(s.country) === normalize(values.country);
+
+          if (isSameAddress) {
+            setAddressValidation(null);
+            return true;
+          }
+        }
+
+        setAddressValidation(data);
+        return data.is_valid;
+      } catch (err) {
+        console.error("Address validation exception:", err);
+        return true;
+      } finally {
+        setIsValidatingAddress(false);
+      }
+    },
+    []
+  );
+
+  // Fetch shipping rates (validates address first unless skipped)
   const fetchShippingRates = useCallback(
     async (values: z.infer<typeof formSchema>) => {
-      setIsCalculatingRates(true);
-      try {
-        const parcelSize = calculateParcelSize(cartItems.length);
+      const missingFields = ["address", "city", "state", "zipCode", "country"]
+        .filter((f) => !values[f]?.trim());
 
+      if (missingFields.length > 0) {
+        toast({
+          variant: "destructive",
+          title: "Incomplete address",
+          description: `Please fill in: ${missingFields.join(", ")}`,
+        });
+        return;
+      }
+
+      setIsCalculatingRates(true);
+      setShippingRates([]);
+      setSelectedRate(null);
+
+      try {
+        if (skipNextValidation.current) {
+          skipNextValidation.current = false;
+        } else {
+          const isValid = await validateShippingAddress(values);
+          if (!isValid) {
+            setIsCalculatingRates(false);
+            return;
+          }
+        }
+
+        const parcelSize = calculateParcelSize(cartItems.length);
         const { data, error } = await supabase.functions.invoke("shipping", {
           body: {
             action: "getRates",
@@ -300,15 +412,21 @@ export const useCheckoutForm = (cartItems: any[]) => {
 
         if (error) throw error;
 
+        if (!data || data.length === 0) {
+          toast({
+            variant: "destructive",
+            title: "No shipping options",
+            description: "No shipping rates available for this address. Please check your address and try again.",
+          });
+          return;
+        }
+
         setShippingRates(data);
 
-        // Auto-select the cheapest shipping option if available
-        if (data && data.length > 0) {
-          const cheapestRate = data.reduce((prev, curr) =>
-            parseFloat(prev.amount) < parseFloat(curr.amount) ? prev : curr
-          );
-          setSelectedRate(cheapestRate);
-        }
+        const cheapestRate = data.reduce((prev: any, curr: any) =>
+          parseFloat(prev.amount) < parseFloat(curr.amount) ? prev : curr
+        );
+        setSelectedRate(cheapestRate);
 
         toast({
           title: "Shipping rates calculated",
@@ -319,14 +437,52 @@ export const useCheckoutForm = (cartItems: any[]) => {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to fetch shipping rates",
+          description: "Failed to fetch shipping rates. Please try again.",
         });
       } finally {
         setIsCalculatingRates(false);
       }
     },
-    [cartItems, toast]
+    [cartItems, toast, validateShippingAddress]
   );
+
+  // Apply suggested address and calculate rates (skip re-validation)
+  const applySuggestedAddress = useCallback(
+    (suggested: AddressValidation["suggested_address"]) => {
+      if (!suggested) return;
+      form.setValue("address", suggested.street1);
+      form.setValue("city", suggested.city);
+      if (suggested.state) form.setValue("state", suggested.state);
+      form.setValue("zipCode", suggested.zip);
+      if (suggested.country) {
+        form.setValue("country", suggested.country);
+        setSelectedCountry(suggested.country);
+      }
+      setAddressValidation(null);
+      skipNextValidation.current = true;
+
+      toast({
+        title: "Address updated",
+        description: "Calculating shipping rates...",
+      });
+
+      setTimeout(() => fetchShippingRates(form.getValues()), 100);
+    },
+    [form, toast, fetchShippingRates]
+  );
+
+  // Dismiss validation and proceed (skip re-validation)
+  const dismissValidation = useCallback(() => {
+    setAddressValidation(null);
+    skipNextValidation.current = true;
+
+    toast({
+      title: "Address kept",
+      description: "Calculating shipping rates...",
+    });
+
+    setTimeout(() => fetchShippingRates(form.getValues()), 100);
+  }, [form, toast, fetchShippingRates]);
 
   return {
     form,
@@ -334,11 +490,15 @@ export const useCheckoutForm = (cartItems: any[]) => {
     shippingRates,
     selectedRate,
     isCalculatingRates,
+    isValidatingAddress,
+    addressValidation,
     selectedCountry,
     handleCountryChange,
     handleAddressSearch,
     handleAddressSelect,
     fetchShippingRates,
     setSelectedRate,
+    applySuggestedAddress,
+    dismissValidation,
   };
 };
