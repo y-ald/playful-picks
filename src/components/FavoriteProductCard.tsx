@@ -12,7 +12,7 @@ interface Product {
   promotion_price?: number | null;
   image_url: string | null;
   additional_images?: string[];
-  description: string | null;
+  description?: string | null;
   stock_quantity?: number | null;
 }
 
