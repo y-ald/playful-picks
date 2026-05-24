@@ -20,6 +20,7 @@ export const NavLink = ({ to, children, className, activeClassName, end = false,
   return (
     <Link 
       to={to} 
+      onClick={onClick}
       className={cn(
         className,
         isActive && activeClassName
