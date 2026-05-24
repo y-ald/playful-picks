@@ -1,60 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Figtree:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* Base */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 270 20% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 270 20% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 270 20% 12%;
 
-    --primary: 328 100% 71%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand — Blush & Lavender (refined) */
+    --primary: 269 47% 55%;          /* deep lavender, premium */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 269 50% 47%;
+    --primary-light: 338 64% 96%;    /* blush wash */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 343 47% 92%;        /* soft blush */
+    --secondary-foreground: 270 20% 14%;
+    --secondary-light: 338 50% 97%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 280 20% 96%;
+    --muted-foreground: 270 8% 42%;
 
-    --accent: 199 83% 57%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 285 47% 75%;           /* lavender */
+    --accent-foreground: 270 20% 12%;
+    --accent-light: 285 60% 95%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 270 15% 91%;
+    --input: 270 15% 91%;
+    --ring: 269 47% 55%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
+
+    /* Editorial extras */
+    --ink: 270 25% 8%;
+    --paper: 35 30% 98%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 328 100% 71%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 199 83% 57%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 270 25% 7%;
+    --foreground: 0 0% 98%;
+    --card: 270 25% 9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 270 25% 9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 285 60% 75%;
+    --primary-foreground: 270 25% 8%;
+    --secondary: 270 20% 16%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 270 20% 16%;
+    --muted-foreground: 270 8% 65%;
+    --accent: 285 47% 65%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 270 20% 18%;
+    --input: 270 20% 18%;
+    --ring: 285 60% 75%;
   }
 }
 
@@ -62,18 +74,36 @@
   * {
     @apply border-border;
   }
+  html {
+    font-family: 'Figtree', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "ss01", "cv11";
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .font-display {
+    font-family: 'Outfit', system-ui, sans-serif;
+    letter-spacing: -0.03em;
+  }
+  .font-body {
+    font-family: 'Figtree', system-ui, sans-serif;
   }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Hide scrollbar for IE, Edge and Firefox */
-.scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  .text-balance { text-wrap: balance; }
+
+  .editorial-line {
+    @apply h-px bg-foreground/15;
+  }
 }
