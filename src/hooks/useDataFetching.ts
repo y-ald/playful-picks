@@ -30,7 +30,7 @@ interface BatchRequest {
 
 // Global batch state
 const batchQueue: Map<TableName, BatchRequest[]> = new Map();
-const batchTimeouts: Map<TableName, NodeJS.Timeout> = new Map();
+const batchTimeouts: Map<TableName, ReturnType<typeof setTimeout>> = new Map();
 const BATCH_DELAY = 50; // ms to wait before processing batch
 
 // Cache for in-flight requests to prevent duplicate requests

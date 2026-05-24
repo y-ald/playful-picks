@@ -13,6 +13,7 @@ interface Product {
   image_url: string | null;
   additional_images?: string[];
   description?: string | null;
+  stock_quantity?: number | null;
 }
 
 interface FavoriteProductCardProps {

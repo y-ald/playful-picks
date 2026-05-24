@@ -1,99 +1,94 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Star, Gift, Truck } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const Hero = () => {
   const { language, translations } = useLanguage();
   const t = translations.home?.hero || {};
-  const features = translations.home?.features || {};
 
   return (
-    <div className="relative min-h-screen bg-secondary-light overflow-hidden">
-      <div className="container mx-auto px-4 pt-24 pb-16">
-        {/* Main Hero Section */}
-        <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="space-y-6"
-          >
-            <span className="inline-block px-4 py-2 bg-primary-light text-primary rounded-full text-sm font-medium">
-              {t.badge}
-            </span>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-              {t.title}
-            </h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              {t.description}
-            </p>
-            <div className="flex gap-4">
-              <Link 
-                to={`/${language}/shop`} 
-                className="inline-flex items-center px-8 py-4 bg-primary text-white rounded-full hover:bg-primary-hover transition-colors"
-              >
-                {t.shopButton}
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+    <section className="relative w-full bg-secondary-light">
+      {/* Announcement bar */}
+      <div className="bg-ink text-background text-xs tracking-[0.2em] uppercase py-2.5 overflow-hidden">
+        <div className="flex whitespace-nowrap animate-marquee">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-12 px-6 shrink-0">
+              <span>Free shipping over $75</span>
+              <span>•</span>
+              <span>New collection — Spring 26</span>
+              <span>•</span>
+              <span>Crafted for little ones</span>
+              <span>•</span>
+              <span>Free shipping over $75</span>
+              <span>•</span>
+              <span>New collection — Spring 26</span>
+              <span>•</span>
+              <span>Crafted for little ones</span>
+              <span>•</span>
             </div>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="relative"
-          >
-            <img 
-              src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
-              alt="Kaïa Kids Collection"
-              className="w-full h-auto rounded-2xl shadow-xl"
-            />
-            <div className="absolute -bottom-4 right-0 sm:-right-4 bg-white p-3 sm:p-4 rounded-lg shadow-lg">
-              <div className="flex items-center space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-sm font-medium mt-1">{t.reviewsTitle}</p>
-            </div>
-          </motion.div>
+          ))}
         </div>
+      </div>
 
-        {/* Features Section */}
-        <motion.div 
+      {/* Editorial hero — full-width split */}
+      <div className="grid lg:grid-cols-12 min-h-[88vh]">
+        {/* Left — image */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+          className="lg:col-span-7 relative bg-primary-light overflow-hidden"
+        >
+          <img
+            src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
+            alt="Kaïa Kids Spring collection"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute top-6 left-6 bg-background/95 backdrop-blur px-3 py-1.5 text-[10px] tracking-[0.25em] uppercase font-medium">
+            {t.badge || 'Spring · 26'}
+          </div>
+        </motion.div>
+
+        {/* Right — content */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="grid md:grid-cols-3 gap-8"
+          transition={{ duration: 0.7, delay: 0.15 }}
+          className="lg:col-span-5 flex flex-col justify-center px-8 lg:px-16 py-16 lg:py-24 bg-background"
         >
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
-              <Star className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{features.quality?.title}</h3>
-            <p className="text-gray-600">{features.quality?.description}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
-              <Gift className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{features.fit?.title}</h3>
-            <p className="text-gray-600">{features.fit?.description}</p>
-          </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm">
-            <div className="w-12 h-12 bg-primary-light rounded-full flex items-center justify-center mb-4">
-              <Truck className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">{features.delivery?.title}</h3>
-            <p className="text-gray-600">{features.delivery?.description}</p>
+          <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-6">
+            New arrivals
+          </p>
+          <h1 className="font-display text-5xl lg:text-7xl font-light leading-[0.95] text-ink mb-8 text-balance">
+            {t.title || (
+              <>
+                Dressed<br />
+                <span className="italic font-normal">for play.</span>
+              </>
+            )}
+          </h1>
+          <p className="text-base lg:text-lg text-muted-foreground max-w-md leading-relaxed mb-10">
+            {t.description || 'Thoughtfully designed essentials for kids who run, dream, and grow into themselves.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              to={`/${language}/shop`}
+              className="group inline-flex items-center justify-center gap-2 bg-ink text-background px-8 py-4 text-sm tracking-wider uppercase font-medium hover:bg-primary transition-colors"
+            >
+              {t.shopButton || 'Shop collection'}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+            <Link
+              to={`/${language}/about`}
+              className="inline-flex items-center justify-center gap-2 border border-ink text-ink px-8 py-4 text-sm tracking-wider uppercase font-medium hover:bg-ink hover:text-background transition-colors"
+            >
+              Our story
+            </Link>
           </div>
         </motion.div>
       </div>
-    </div>
+    </section>
   );
 };
 
