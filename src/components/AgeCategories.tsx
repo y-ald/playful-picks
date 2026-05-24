@@ -1,57 +1,65 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const categories = [
-  { 
-    age: '0-2',
-    label: 'Infants',
-    illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png'
-  },
-  { 
-    age: '3-5',
-    label: 'Toddlers',
-    illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png'
-  },
-  { 
-    age: '6-8',
-    label: 'Kids',
-    illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png'
-  },
-  { 
-    age: '9-12',
-    label: 'Pre-teens',
-    illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png'
-  },
+  { age: '0-2', label: 'Baby', illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png' },
+  { age: '3-5', label: 'Toddler', illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png' },
+  { age: '6-8', label: 'Kids', illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png' },
+  { age: '9-12', label: 'Pre-teens', illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png' },
 ];
 
 const AgeCategories = () => {
+  const { language } = useLanguage();
+
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Shop by Age</h2>
-          <p className="text-gray-600">Find the perfect toys for your child's age group</p>
+    <section className="w-full bg-background py-20 lg:py-28">
+      <div className="container mx-auto px-6">
+        <div className="flex items-end justify-between mb-12 lg:mb-16 gap-6">
+          <div>
+            <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
+              By age
+            </p>
+            <h2 className="font-display text-3xl lg:text-5xl font-light text-ink text-balance">
+              Find their fit.
+            </h2>
+          </div>
+          <Link
+            to={`/${language}/shop`}
+            className="hidden md:inline-flex items-center text-sm tracking-wider uppercase font-medium text-ink border-b border-ink pb-1 hover:text-primary hover:border-primary transition-colors"
+          >
+            View all
+          </Link>
         </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-5">
           {categories.map((category, index) => (
             <motion.div
               key={category.age}
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="group cursor-pointer"
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.08 }}
             >
-              <div className="relative overflow-hidden rounded-lg bg-accent-light aspect-square transition-transform group-hover:scale-95">
-                <img 
-                  src={category.illustration} 
-                  alt={`${category.label} category`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex flex-col justify-end p-4">
-                  <span className="text-4xl font-bold text-white mb-2">{category.age}</span>
-                  <h3 className="text-xl font-medium text-white">{category.label}</h3>
+              <Link
+                to={`/${language}/shop`}
+                className="group block"
+              >
+                <div className="relative overflow-hidden bg-secondary aspect-[3/4] mb-4">
+                  <img
+                    src={category.illustration}
+                    alt={`${category.label}`}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/40 via-transparent to-transparent" />
+                  <span className="absolute bottom-4 left-4 font-display text-2xl lg:text-3xl text-background font-light">
+                    {category.age}
+                  </span>
                 </div>
-              </div>
+                <h3 className="text-sm tracking-wider uppercase font-medium text-ink group-hover:text-primary transition-colors">
+                  {category.label}
+                </h3>
+              </Link>
             </motion.div>
           ))}
         </div>

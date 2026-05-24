@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { useRef } from 'react';
 import ProductCard from './ProductCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,7 +10,6 @@ import {
 } from "@/components/ui/carousel";
 
 const NewArrivals = () => {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { language, translations } = useLanguage();
 
   const { data: products, isLoading } = useQuery({
@@ -29,39 +27,42 @@ const NewArrivals = () => {
   });
 
   if (isLoading) {
-    return <div className="animate-pulse h-[400px] bg-gray-100 rounded-lg"></div>;
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-5">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="aspect-[3/4] bg-muted animate-pulse" />
+        ))}
+      </div>
+    );
   }
 
-  if (!products?.length) {
-    return null;
-  }
+  if (!products?.length) return null;
 
   return (
-    <div className="relative">
-      <div className="flex justify-between items-center gap-4 mb-6">
-        <h2 className="text-2xl font-bold">
-          {translations?.home?.newArrivals?.title || "New Arrivals"}
-        </h2>
-        <Link 
-          to={`/${language}/shop`} 
-          className="text-primary hover:underline"
+    <div>
+      <div className="flex items-end justify-between mb-12 gap-6">
+        <div>
+          <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
+            Just landed
+          </p>
+          <h2 className="font-display text-3xl lg:text-5xl font-light text-ink text-balance">
+            {translations?.home?.newArrivals?.title || "New arrivals"}
+          </h2>
+        </div>
+        <Link
+          to={`/${language}/shop`}
+          className="hidden md:inline-flex items-center text-sm tracking-wider uppercase font-medium text-ink border-b border-ink pb-1 hover:text-primary hover:border-primary transition-colors"
         >
-          {translations?.home?.newArrivals?.viewAll || "View All"}
+          {translations?.home?.newArrivals?.viewAll || "View all"}
         </Link>
       </div>
-      
-      <Carousel
-        className="w-full"
-        opts={{
-          align: "start",
-          dragFree: true,
-        }}
-      >
-        <CarouselContent className="-ml-2 md:-ml-4">
+
+      <Carousel className="w-full" opts={{ align: "start", dragFree: true }}>
+        <CarouselContent className="-ml-3 lg:-ml-5">
           {products.map((product) => (
-            <CarouselItem 
-              key={product.id} 
-              className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4"
+            <CarouselItem
+              key={product.id}
+              className="pl-3 lg:pl-5 basis-1/2 md:basis-1/3 lg:basis-1/4"
             >
               <ProductCard product={product} />
             </CarouselItem>
