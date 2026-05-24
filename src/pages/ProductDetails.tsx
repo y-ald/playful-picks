@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Heart, ShoppingCart, ChevronLeft, ChevronRight } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { Heart, ChevronLeft, ChevronRight, Truck, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,100 +24,50 @@ const ProductDetails = () => {
     ? [product.image_url, ...(product.additional_images || [])].filter(Boolean)
     : [];
 
-  useEffect(() => {
-    setCurrentImageIndex(0);
-  }, [id]);
+  useEffect(() => setCurrentImageIndex(0), [id]);
 
   if (!id) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 pt-24 text-center">
-          <h2 className="text-2xl font-bold mb-4">Invalid product</h2>
-          <p className="text-gray-600 mb-6">No product ID was provided.</p>
-          <Button onClick={() => navigate(-1)}>Go Back</Button>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-light text-ink mb-3">Invalid product</h2>
+          <Button onClick={() => navigate(-1)}>Go back</Button>
         </div>
       </div>
     );
   }
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
   const isOutOfStock = product?.stock_quantity !== null && product?.stock_quantity !== undefined && product.stock_quantity <= 0;
 
   const addToCartHandler = async () => {
-    if (isOutOfStock) {
-      toast({
-        title: "Out of Stock",
-        description: "This product is currently unavailable",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (isOutOfStock) return;
     try {
       await addToCart(id);
-      toast({
-        title: "Success",
-        description: "Item added to cart",
-      });
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add item to cart",
-        variant: "destructive",
-      });
+      toast({ title: "Added to bag", description: product?.name });
+    } catch {
+      toast({ title: "Error", description: "Failed to add item", variant: "destructive" });
     }
   };
 
   const toggleFavorite = async () => {
     try {
-      if (isFavorite(id)) {
-        await removeFromFavorites(id);
-      } else {
-        await addToFavorites(id);
-      }
-    } catch (error) {
-      console.error("Error updating favorites:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update favorites",
-        variant: "destructive",
-      });
+      if (isFavorite(id)) await removeFromFavorites(id);
+      else await addToFavorites(id);
+    } catch {
+      toast({ title: "Error", description: "Failed to update favorites", variant: "destructive" });
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 pt-24">
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <Skeleton className="aspect-square w-full rounded-lg" />
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton
-                    key={i}
-                    className="flex-shrink-0 w-20 h-20 rounded-md"
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="space-y-6">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-8 w-1/4" />
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-32 w-full" />
-              <div className="flex gap-4">
-                <Skeleton className="h-10 flex-1" />
-                <Skeleton className="h-10 w-10" />
-              </div>
-            </div>
+      <div className="min-h-screen bg-background pt-20">
+        <div className="grid lg:grid-cols-2 gap-0">
+          <Skeleton className="aspect-[3/4] w-full rounded-none" />
+          <div className="px-8 lg:px-16 py-16 space-y-6">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-12 w-full" />
           </div>
         </div>
       </div>
@@ -126,95 +76,135 @@ const ProductDetails = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="container mx-auto px-4 pt-24 text-center">
-          <h2 className="text-2xl font-bold mb-4">Product not found</h2>
-          <p className="text-gray-600 mb-6">
-            The product you're looking for doesn't exist or has been removed.
-          </p>
-          <Button onClick={() => window.history.back()}>Go Back</Button>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-display text-3xl font-light text-ink mb-3">Product not found</h2>
+          <Button onClick={() => window.history.back()}>Go back</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="container mx-auto px-4 pt-24">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <div className="relative aspect-square">
-              <img
-                src={images[currentImageIndex]}
-                alt={product.name}
-                className="w-full h-full object-cover rounded-lg"
-              />
-              {images.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
-                  >
-                    <ChevronLeft className="w-6 h-6" />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
-                  >
-                    <ChevronRight className="w-6 h-6" />
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {images.map((image, index) => (
+    <div className="min-h-screen bg-background pt-20">
+      {/* Breadcrumb */}
+      <div className="container mx-auto px-6 py-4">
+        <div className="text-xs tracking-wider uppercase text-muted-foreground flex gap-2">
+          <Link to={`/${language}`} className="hover:text-ink">Home</Link>
+          <span>/</span>
+          <Link to={`/${language}/shop`} className="hover:text-ink">Shop</Link>
+          <span>/</span>
+          <span className="text-ink">{product.name}</span>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-0 lg:min-h-[80vh]">
+        {/* Gallery */}
+        <div className="bg-secondary-light">
+          <div className="relative aspect-[3/4] lg:aspect-auto lg:h-full">
+            <img
+              src={images[currentImageIndex]}
+              alt={product.name}
+              className="w-full h-full object-cover"
+            />
+            {images.length > 1 && (
+              <>
                 <button
-                  key={index}
-                  onClick={() => setCurrentImageIndex(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-colors ${
-                    currentImageIndex === index
-                      ? "border-primary"
-                      : "border-transparent"
-                  }`}
+                  onClick={() => setCurrentImageIndex((p) => (p - 1 + images.length) % images.length)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur hover:bg-background"
                 >
-                  <img
-                    src={image}
-                    alt={`${product.name} thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
-              ))}
-            </div>
+                <button
+                  onClick={() => setCurrentImageIndex((p) => (p + 1) % images.length)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 backdrop-blur hover:bg-background"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  {images.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentImageIndex(i)}
+                      className={`h-1 transition-all ${currentImageIndex === i ? "w-8 bg-ink" : "w-4 bg-ink/30"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          <div className="space-y-6">
-            <h1 className="text-4xl font-bold">{product.name}</h1>
-            <p className="text-2xl font-bold text-primary">
-              ${product.price.toFixed(2)}
-            </p>
+        </div>
+
+        {/* Info */}
+        <div className="flex items-center bg-background">
+          <div className="w-full px-8 lg:px-16 py-12 lg:py-20 space-y-8 max-w-xl">
+            <div>
+              <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
+                Kaïa Kids
+              </p>
+              <h1 className="font-display text-3xl lg:text-5xl font-light text-ink leading-tight mb-4 text-balance">
+                {product.name}
+              </h1>
+              <div className="text-xl text-ink">
+                {product.promotion_price ? (
+                  <span className="flex items-center gap-3">
+                    <span className="line-through text-muted-foreground">${product.price.toFixed(2)}</span>
+                    <span className="text-destructive font-medium">${product.promotion_price.toFixed(2)}</span>
+                  </span>
+                ) : (
+                  <span>${product.price.toFixed(2)}</span>
+                )}
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
             {product.age_range && (
-              <p className="text-gray-600">Age: {product.age_range}</p>
+              <div>
+                <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Recommended age</p>
+                <p className="text-sm text-ink">{product.age_range} years</p>
+              </div>
             )}
-            <p className="text-gray-700">{product.description}</p>
+
+            {product.description && (
+              <div>
+                <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground mb-2">Description</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+              </div>
+            )}
+
             {isOutOfStock && (
-              <p className="text-destructive font-medium">Out of Stock</p>
+              <p className="text-sm text-destructive uppercase tracking-wider">Currently sold out</p>
             )}
-            <div className="flex gap-4">
-              <Button 
-                onClick={addToCartHandler} 
-                className="flex-1"
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                onClick={addToCartHandler}
                 disabled={isOutOfStock}
+                className="flex-1 h-14 bg-ink text-background hover:bg-primary rounded-none text-xs tracking-[0.25em] uppercase font-medium"
               >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                {isOutOfStock ? "Out of Stock" : (translations?.shop?.addToCart || "Add to Cart")}
+                {isOutOfStock ? "Sold out" : (translations?.shop?.addToCart || "Add to bag")}
               </Button>
-              <Button variant="outline" onClick={toggleFavorite}>
-                <Heart
-                  className={`h-4 w-4 ${
-                    isFavorite(id) ? "fill-red-500 text-red-500" : ""
-                  }`}
-                />
+              <Button
+                variant="outline"
+                onClick={toggleFavorite}
+                className="h-14 w-14 rounded-none border-ink hover:bg-ink hover:text-background"
+              >
+                <Heart className={`h-4 w-4 ${isFavorite(id) ? "fill-primary text-primary" : ""}`} />
               </Button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 pt-6 border-t border-border">
+              {[
+                { icon: Truck, label: 'Free shipping over $75' },
+                { icon: RefreshCw, label: 'Free returns within 30 days' },
+                { icon: ShieldCheck, label: 'Secure encrypted payment' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-3 text-sm text-muted-foreground">
+                  <Icon className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
