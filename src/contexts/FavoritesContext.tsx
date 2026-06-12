@@ -7,13 +7,12 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, ANON_CLIENT_ID } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Constants
-const FAVORITES_ID_KEY = "anonymous_favorites_id";
 const FAVORITES_TIMESTAMP_KEY = "favorites_timestamp";
 const STORAGE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
