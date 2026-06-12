@@ -58,19 +58,10 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   // Calculate favorites count
   const favoritesCount = useMemo(() => favorites.length, [favorites]);
 
-  // Initialize client ID for anonymous users
+  // Initialize client ID for anonymous users (shared with supabase client header)
   useEffect(() => {
     if (!isAuthenticated) {
-      // Check if there's an existing client ID
-      const storedClientId = localStorage.getItem(FAVORITES_ID_KEY);
-      if (storedClientId) {
-        setClientId(storedClientId);
-      } else {
-        // Generate a new client ID
-        const newClientId = crypto.randomUUID();
-        localStorage.setItem(FAVORITES_ID_KEY, newClientId);
-        setClientId(newClientId);
-      }
+      setClientId(ANON_CLIENT_ID || null);
     }
   }, [isAuthenticated]);
 
