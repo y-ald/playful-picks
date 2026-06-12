@@ -1,12 +1,16 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import babyImg from '@/assets/age-baby.jpg';
+import toddlerImg from '@/assets/age-toddler.jpg';
+import kidsImg from '@/assets/age-kids.jpg';
+import preteenImg from '@/assets/age-preteen.jpg';
 
 const categories = [
-  { age: '0-2', label: 'Baby', illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png' },
-  { age: '3-5', label: 'Toddler', illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png' },
-  { age: '6-8', label: 'Kids', illustration: '/lovable-uploads/82389159-6492-4264-a7c0-37e526f8b3a4.png' },
-  { age: '9-12', label: 'Pre-teens', illustration: '/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png' },
+  { age: '0-2', label: 'Baby', illustration: babyImg },
+  { age: '3-5', label: 'Toddler', illustration: toddlerImg },
+  { age: '6-8', label: 'Kids', illustration: kidsImg },
+  { age: '9-12', label: 'Pre-teens', illustration: preteenImg },
 ];
 
 const AgeCategories = () => {
