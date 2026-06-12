@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import heroImage from '@/assets/hero-kids.jpg';
 
 const Hero = () => {
   const { language, translations } = useLanguage();
@@ -41,9 +42,10 @@ const Hero = () => {
           className="lg:col-span-7 relative bg-primary-light overflow-hidden"
         >
           <img
-            src="/lovable-uploads/5040cbab-aa9f-43cc-a614-65aa0be6a03d.png"
+            src={heroImage}
             alt="Kaïa Kids Spring collection"
             className="absolute inset-0 w-full h-full object-cover"
+            fetchPriority="high"
           />
           <div className="absolute top-6 left-6 bg-background/95 backdrop-blur px-3 py-1.5 text-[10px] tracking-[0.25em] uppercase font-medium">
             {t.badge || 'Spring · 26'}
