@@ -7,13 +7,12 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, ANON_CLIENT_ID } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQueryClient } from "@tanstack/react-query";
 
 // Constants
-const FAVORITES_ID_KEY = "anonymous_favorites_id";
 const FAVORITES_TIMESTAMP_KEY = "favorites_timestamp";
 const STORAGE_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
@@ -59,19 +58,10 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   // Calculate favorites count
   const favoritesCount = useMemo(() => favorites.length, [favorites]);
 
-  // Initialize client ID for anonymous users
+  // Initialize client ID for anonymous users (shared with supabase client header)
   useEffect(() => {
     if (!isAuthenticated) {
-      // Check if there's an existing client ID
-      const storedClientId = localStorage.getItem(FAVORITES_ID_KEY);
-      if (storedClientId) {
-        setClientId(storedClientId);
-      } else {
-        // Generate a new client ID
-        const newClientId = crypto.randomUUID();
-        localStorage.setItem(FAVORITES_ID_KEY, newClientId);
-        setClientId(newClientId);
-      }
+      setClientId(ANON_CLIENT_ID || null);
     }
   }, [isAuthenticated]);
 
