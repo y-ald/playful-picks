@@ -4,6 +4,7 @@ import NewArrivals from '../components/NewArrivals';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Truck, ShieldCheck, RefreshCw, Sparkles } from 'lucide-react';
+import editorialCampaign from '@/assets/editorial-campaign.jpg';
 
 const Index = () => {
   const { language } = useLanguage();
@@ -16,8 +17,9 @@ const Index = () => {
       <section className="grid lg:grid-cols-2 min-h-[70vh] border-y border-border">
         <div className="relative bg-secondary overflow-hidden order-2 lg:order-1">
           <img
-            src="/lovable-uploads/922c1565-0314-4b1b-98e7-4c7d7a672bd9.png"
-            alt="Editorial campaign"
+            src={editorialCampaign}
+            alt="Atelier de mode enfantine — tissus durables et savoir-faire artisanal"
+            loading="lazy"
             className="absolute inset-0 w-full h-full object-cover"
           />
         </div>
