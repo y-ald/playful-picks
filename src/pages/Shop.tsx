@@ -1,6 +1,7 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, X } from "lucide-react";
+import { Search, X, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSupabaseQuery } from "@/hooks/useDataFetching";
@@ -20,22 +21,45 @@ type Product = {
   stock_quantity: number;
 };
 
+const CATEGORIES = ["Educational", "Books", "Science", "Baby Toys", "Arts & Crafts"];
+const AGE_RANGES = ["0-2", "3-5", "6-8", "9-12"];
+
+const parseList = (v: string | null) => (v ? v.split(",").filter(Boolean) : []);
+
 const Shop = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [selectedAgeRange, setSelectedAgeRange] = useState<string | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() =>
+    parseList(searchParams.get("category"))
+  );
+  const [selectedAgeRanges, setSelectedAgeRanges] = useState<string[]>(() =>
+    parseList(searchParams.get("age"))
+  );
   const { translations } = useLanguage();
+  const t = translations?.shop || {};
+  const f = t.filters || {};
+
+  // Sync URL <- state
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (selectedCategories.length) next.set("category", selectedCategories.join(","));
+    else next.delete("category");
+    if (selectedAgeRanges.length) next.set("age", selectedAgeRanges.join(","));
+    else next.delete("age");
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategories, selectedAgeRanges]);
 
   const queryFn = useCallback(() => {
     let query = supabase.from("products").select("*");
     if (searchQuery) query = query.ilike("name", `%${searchQuery}%`);
-    if (selectedCategory) query = query.eq("category", selectedCategory);
-    if (selectedAgeRange) query = query.eq("age_range", selectedAgeRange);
+    if (selectedCategories.length) query = query.in("category", selectedCategories);
+    if (selectedAgeRanges.length) query = query.in("age_range", selectedAgeRanges);
     return query;
-  }, [searchQuery, selectedCategory, selectedAgeRange]);
+  }, [searchQuery, selectedCategories, selectedAgeRanges]);
 
   const { data: products, isLoading } = useSupabaseQuery<Product[]>(
-    ["products", searchQuery, selectedCategory, selectedAgeRange],
+    ["products", searchQuery, selectedCategories.join(","), selectedAgeRanges.join(",")],
     "products",
     queryFn
   );
@@ -45,91 +69,126 @@ const Shop = () => {
     []
   );
 
-  const categories = ["Educational", "Books", "Science", "Baby Toys", "Arts & Crafts"];
-  const ageRanges = ["0-2", "3-5", "6-8", "9-12"];
+  const toggle = (list: string[], setList: (v: string[]) => void, value: string) => {
+    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  };
 
   const activeFilters = [
-    selectedCategory && { label: selectedCategory, clear: () => setSelectedCategory(null) },
-    selectedAgeRange && { label: `${selectedAgeRange} years`, clear: () => setSelectedAgeRange(null) },
-  ].filter(Boolean) as { label: string; clear: () => void }[];
+    ...selectedCategories.map((c) => ({
+      label: c,
+      clear: () => setSelectedCategories(selectedCategories.filter((v) => v !== c)),
+    })),
+    ...selectedAgeRanges.map((a) => ({
+      label: `${a} ${f.years || "years"}`,
+      clear: () => setSelectedAgeRanges(selectedAgeRanges.filter((v) => v !== a)),
+    })),
+  ];
+
+  const clearAll = () => {
+    setSelectedCategories([]);
+    setSelectedAgeRanges([]);
+  };
+
+  const Chip = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-xs tracking-wider uppercase transition-colors ${
+        active ? "bg-ink text-background border-ink" : "border-border text-ink hover:border-ink"
+      }`}
+    >
+      {active && <Check className="w-3 h-3" />}
+      {children}
+    </button>
+  );
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Shop header */}
       <section className="bg-secondary-light pt-32 pb-12 border-b border-border">
         <div className="container mx-auto px-6">
           <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
-            All products
+            {t.eyebrow || "All products"}
           </p>
           <h1 className="font-display text-4xl lg:text-6xl font-light text-ink mb-6 text-balance">
-            {translations?.shop?.title || "Shop the collection"}
+            {t.title || "Shop the collection"}
           </h1>
           <p className="text-muted-foreground max-w-xl">
-            {products?.length || 0} pieces — selected for everyday play and quiet moments.
+            {(t.resultsCount || "{count} pieces").replace("{count}", String(products?.length || 0))}
           </p>
         </div>
       </section>
 
-      {/* Filter bar */}
       <section className="sticky top-20 z-30 bg-background/95 backdrop-blur border-b border-border">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-6 py-4 space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-6">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={translations?.shop?.searchPlaceholder || "Search products..."}
+                placeholder={t.searchPlaceholder || "Search products..."}
                 className="pl-10 h-11 bg-transparent border-border rounded-none"
                 onChange={(e) => debouncedSetSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <select
-                className="h-11 px-4 bg-transparent border border-border text-sm rounded-none focus:outline-none focus:border-ink"
-                value={selectedCategory || ""}
-                onChange={(e) => setSelectedCategory(e.target.value || null)}
-              >
-                <option value="">
-                  {translations?.shop?.filters?.allCategories || "All categories"}
-                </option>
-                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select
-                className="h-11 px-4 bg-transparent border border-border text-sm rounded-none focus:outline-none focus:border-ink"
-                value={selectedAgeRange || ""}
-                onChange={(e) => setSelectedAgeRange(e.target.value || null)}
-              >
-                <option value="">
-                  {translations?.shop?.filters?.allAges || "All ages"}
-                </option>
-                {ageRanges.map((r) => (
-                  <option key={r} value={r}>
-                    {r} {translations?.shop?.filters?.years || "years"}
-                  </option>
-                ))}
-              </select>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground mr-2">
+                {f.category || "Category"}:
+              </span>
+              {CATEGORIES.map((c) => (
+                <Chip
+                  key={c}
+                  active={selectedCategories.includes(c)}
+                  onClick={() => toggle(selectedCategories, setSelectedCategories, c)}
+                >
+                  {c}
+                </Chip>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground mr-2">
+                {f.age || "Age"}:
+              </span>
+              {AGE_RANGES.map((a) => (
+                <Chip
+                  key={a}
+                  active={selectedAgeRanges.includes(a)}
+                  onClick={() => toggle(selectedAgeRanges, setSelectedAgeRanges, a)}
+                >
+                  {a} {f.years || "years"}
+                </Chip>
+              ))}
             </div>
           </div>
 
           {activeFilters.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 mt-4">
-              <span className="text-xs uppercase tracking-wider text-muted-foreground mr-2">Filters:</span>
-              {activeFilters.map((f) => (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <span className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground mr-2">
+                {f.active || "Filters"}:
+              </span>
+              {activeFilters.map((af) => (
                 <button
-                  key={f.label}
-                  onClick={f.clear}
+                  key={af.label}
+                  onClick={af.clear}
                   className="inline-flex items-center gap-1.5 px-3 py-1 border border-ink text-xs tracking-wider uppercase hover:bg-ink hover:text-background transition-colors"
                 >
-                  {f.label}
+                  {af.label}
                   <X className="w-3 h-3" />
                 </button>
               ))}
+              <button
+                onClick={clearAll}
+                className="text-[11px] tracking-[0.25em] uppercase text-muted-foreground hover:text-ink underline underline-offset-4 ml-2"
+              >
+                {f.clearAll || "Clear all"}
+              </button>
             </div>
           )}
         </div>
       </section>
 
-      {/* Product grid */}
       <section className="container mx-auto px-6 py-12">
         {isLoading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-10 lg:gap-x-5">
@@ -143,8 +202,8 @@ const Shop = () => {
           </div>
         ) : products?.length === 0 ? (
           <div className="text-center py-24">
-            <p className="font-display text-2xl text-ink mb-3">No products found</p>
-            <p className="text-muted-foreground">Try adjusting your filters.</p>
+            <p className="font-display text-2xl text-ink mb-3">{t.noResults || "No products found"}</p>
+            <p className="text-muted-foreground">{t.tryAdjusting || "Try adjusting your filters."}</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-10 lg:gap-x-5">

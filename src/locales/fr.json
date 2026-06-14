@@ -8,48 +8,64 @@
     "cart": "Panier"
   },
   "home": {
+    "announcement": {
+      "shipping": "Livraison offerte dès 75 $",
+      "collection": "Nouvelle collection — Printemps 26",
+      "crafted": "Confectionné pour les petits"
+    },
     "hero": {
-      "badge": "Collection Printemps - 20% de réduction sur la mode enfant",
-      "title": "Habillez vos petits avec style",
-      "description": "Découvrez notre délicieuse collection de vêtements pour enfants qui allie confort, style et durabilité. Des motifs ludiques aux designs pratiques, nous avons tout ce dont vos enfants ont besoin.",
+      "badge": "Printemps · 26",
+      "newArrivals": "Nouveautés",
+      "title": "Habillés pour jouer.",
+      "description": "Des essentiels pensés avec soin pour les enfants qui courent, rêvent et s'épanouissent.",
       "shopButton": "Voir la collection",
+      "ourStory": "Notre histoire",
       "reviewsTitle": "Adoré par les parents et les enfants"
     },
-    "features": {
-      "quality": {
-        "title": "Matériaux de qualité",
-        "description": "Des tissus doux et durables qui gardent vos enfants confortables toute la journée."
-      },
-      "fit": {
-        "title": "Ajustement parfait",
-        "description": "Tailles soigneusement conçues pour grandir avec votre enfant, assurant confort et style."
-      },
-      "delivery": {
-        "title": "Livraison rapide",
-        "description": "Livraison gratuite pour les commandes de plus de 50$ avec notre service de livraison express."
-      }
+    "editorial": {
+      "eyebrow": "La collection",
+      "title1": "Teintes douces.",
+      "title2": "Âmes fortes.",
+      "description": "Des pièces dessinées dans notre atelier parisien — silhouettes raffinées, palettes délicates et tissus choisis pour les petits aventuriers.",
+      "cta": "Découvrir"
     },
     "ageCategories": {
-      "title": "Acheter par âge",
-      "subtitle": "Trouvez les jouets parfaits pour l'âge de votre enfant",
-      "infant": "Bébés",
-      "toddler": "Tout-petits",
-      "kids": "Enfants",
-      "preteen": "Pré-adolescents"
+      "eyebrow": "Par âge",
+      "title": "Trouvez leur taille.",
+      "viewAll": "Tout voir",
+      "infant": "Bébé",
+      "toddler": "Tout-petit",
+      "kids": "Enfant",
+      "preteen": "Pré-ado"
     },
     "newArrivals": {
+      "eyebrow": "Tout juste arrivé",
       "title": "Nouveautés",
-      "viewAll": "Voir tout"
+      "viewAll": "Tout voir"
+    },
+    "trust": {
+      "shipping": { "title": "Livraison offerte", "desc": "Dès 75 $ d'achat" },
+      "returns": { "title": "Retours faciles", "desc": "30 jours, sans question" },
+      "secure": { "title": "Paiement sécurisé", "desc": "Paiement chiffré" },
+      "crafted": { "title": "Conçu avec soin", "desc": "Pensé pour les petits" }
     }
   },
   "shop": {
-    "title": "Boutique",
+    "title": "Découvrez la collection",
+    "eyebrow": "Tous les produits",
+    "resultsCount": "{count} pièces — sélectionnées pour le jeu et les instants calmes.",
     "searchPlaceholder": "Rechercher des produits...",
     "filters": {
       "allCategories": "Toutes les catégories",
       "allAges": "Tous les âges",
-      "years": "ans"
+      "years": "ans",
+      "category": "Catégorie",
+      "age": "Âge",
+      "active": "Filtres",
+      "clearAll": "Tout effacer"
     },
+    "noResults": "Aucun produit trouvé",
+    "tryAdjusting": "Essayez d'ajuster vos filtres.",
     "addToCart": "Ajouter au panier",
     "addToFavorites": "Ajouter aux favoris",
     "removeFavorite": "Retirer des favoris",
@@ -57,8 +73,8 @@
     "price": "Prix"
   },
   "about": {
-    "title": "À propos de Kaia Kids",
-    "description": "Notre vision est de fournir des vêtements de haute qualité qui sont élégants et beaux pour toutes les occasions.",
+    "title": "À propos de Kaïa Kids",
+    "description": "Notre vision est de proposer des vêtements de haute qualité, élégants et beaux pour toutes les occasions. Nous nous engageons à contribuer à l'écologie de la planète en offrant des vêtements durables et de qualité.",
     "vision": "Nous nous engageons à contribuer à l'écologie de la planète en proposant des vêtements durables et de haute qualité.",
     "quality": {
       "title": "La qualité avant tout",
@@ -71,20 +87,9 @@
   },
   "contact": {
     "title": "Contactez-nous",
-    "email": {
-      "title": "Email",
-      "value": "support@example.com"
-    },
-    "chat": {
-      "title": "Chat en direct",
-      "whatsapp": "Discuter sur WhatsApp"
-    },
-    "form": {
-      "name": "Nom",
-      "email": "Email",
-      "message": "Message",
-      "send": "Envoyer le message"
-    },
+    "email": { "title": "Email", "value": "support@example.com" },
+    "chat": { "title": "Chat en direct", "whatsapp": "Discuter sur WhatsApp" },
+    "form": { "name": "Nom", "email": "Email", "message": "Message", "send": "Envoyer le message" },
     "social": {
       "title": "Suivez-nous",
       "facebook": "Suivez-nous sur Facebook",
@@ -121,10 +126,7 @@
     "strengthWeak": "Faible",
     "strengthMedium": "Moyen",
     "strengthStrong": "Fort",
-    "detected": {
-      "email": "Email",
-      "phone": "Téléphone"
-    }
+    "detected": { "email": "Email", "phone": "Téléphone" }
   },
   "cart": {
     "title": "Panier",
@@ -168,13 +170,26 @@
     "price": "Prix"
   },
   "footer": {
-    "description": "Des vêtements et accessoires de qualité pour les enfants, conçus avec amour et attention aux détails.",
+    "newsletter": {
+      "eyebrow": "Restez informé",
+      "title1": "Lettres depuis",
+      "title2": "l'atelier.",
+      "placeholder": "votre@email.com",
+      "subscribe": "S'abonner"
+    },
+    "description": "Des essentiels pensés avec soin pour les enfants, confectionnés avec amour.",
+    "shop": "Boutique",
+    "allProducts": "Tous les produits",
+    "newArrivals": "Nouveautés",
+    "favorites": "Favoris",
     "information": "Informations",
+    "about": "À propos",
     "terms": "Conditions de vente",
     "privacy": "Politique de confidentialité",
     "legal": "Mentions légales",
     "contact": "Contact",
-    "contactForm": "Formulaire de contact",
+    "contactForm": "Contact",
+    "connect": "Nous suivre",
     "copyright": "Tous droits réservés.",
     "securePayment": "Paiement sécurisé",
     "fastDelivery": "Livraison rapide"

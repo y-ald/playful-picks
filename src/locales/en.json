@@ -8,48 +8,64 @@
     "cart": "Cart"
   },
   "home": {
+    "announcement": {
+      "shipping": "Free shipping over $75",
+      "collection": "New collection — Spring 26",
+      "crafted": "Crafted for little ones"
+    },
     "hero": {
-      "badge": "Spring Collection - 20% Off Kids Fashion",
-      "title": "Dress Your Little Ones in Style",
-      "description": "Discover our delightful collection of children's clothing that combines comfort, style, and durability. From playful patterns to practical designs, we've got everything your kids need.",
-      "shopButton": "Shop Collection",
+      "badge": "Spring · 26",
+      "newArrivals": "New arrivals",
+      "title": "Dressed for play.",
+      "description": "Thoughtfully designed essentials for kids who run, dream, and grow into themselves.",
+      "shopButton": "Shop collection",
+      "ourStory": "Our story",
       "reviewsTitle": "Loved by Parents & Kids"
     },
-    "features": {
-      "quality": {
-        "title": "Quality Materials",
-        "description": "Soft, durable fabrics that keep your children comfortable all day long."
-      },
-      "fit": {
-        "title": "Perfect Fit",
-        "description": "Carefully designed sizes to grow with your child, ensuring comfort and style."
-      },
-      "delivery": {
-        "title": "Fast Delivery",
-        "description": "Free shipping on orders over $50 with our express delivery service."
-      }
+    "editorial": {
+      "eyebrow": "The collection",
+      "title1": "Soft hues.",
+      "title2": "Strong souls.",
+      "description": "Pieces designed in our Paris studio — refined silhouettes, gentle palettes, and fabrics chosen for tiny adventurers.",
+      "cta": "Discover"
     },
     "ageCategories": {
-      "title": "Shop by Age",
-      "subtitle": "Find the perfect toys for your child's age group",
-      "infant": "Infants",
-      "toddler": "Toddlers",
+      "eyebrow": "By age",
+      "title": "Find their fit.",
+      "viewAll": "View all",
+      "infant": "Baby",
+      "toddler": "Toddler",
       "kids": "Kids",
       "preteen": "Pre-teens"
     },
     "newArrivals": {
-      "title": "New Arrivals",
-      "viewAll": "View All"
+      "eyebrow": "Just landed",
+      "title": "New arrivals",
+      "viewAll": "View all"
+    },
+    "trust": {
+      "shipping": { "title": "Free shipping", "desc": "On orders over $75" },
+      "returns": { "title": "Easy returns", "desc": "30 days, no questions" },
+      "secure": { "title": "Secure payment", "desc": "Encrypted checkout" },
+      "crafted": { "title": "Crafted with care", "desc": "Made for little ones" }
     }
   },
   "shop": {
-    "title": "Shop",
+    "title": "Shop the collection",
+    "eyebrow": "All products",
+    "resultsCount": "{count} pieces — selected for everyday play and quiet moments.",
     "searchPlaceholder": "Search products...",
     "filters": {
-      "allCategories": "All Categories",
-      "allAges": "All Ages",
-      "years": "years"
+      "allCategories": "All categories",
+      "allAges": "All ages",
+      "years": "years",
+      "category": "Category",
+      "age": "Age",
+      "active": "Filters",
+      "clearAll": "Clear all"
     },
+    "noResults": "No products found",
+    "tryAdjusting": "Try adjusting your filters.",
     "addToCart": "Add to Cart",
     "addToFavorites": "Add to Favorites",
     "removeFavorite": "Remove from Favorites",
@@ -57,8 +73,8 @@
     "price": "Price"
   },
   "about": {
-    "title": "About Kaia Kids",
-    "description": "Our vision is to provide high-quality clothes that are elegant and beautiful for all occasions.",
+    "title": "About Kaïa Kids",
+    "description": "Our vision is to provide high-quality clothes that are elegant and beautiful for all occasions. We are committed to contributing to the ecology of the planet by offering sustainable and high-quality clothing.",
     "vision": "We are committed to contributing to the ecology of the planet by offering sustainable and high-quality clothing.",
     "quality": {
       "title": "Quality First",
@@ -71,20 +87,9 @@
   },
   "contact": {
     "title": "Contact Us",
-    "email": {
-      "title": "Email",
-      "value": "support@example.com"
-    },
-    "chat": {
-      "title": "Live Chat",
-      "whatsapp": "Chat on WhatsApp"
-    },
-    "form": {
-      "name": "Name",
-      "email": "Email",
-      "message": "Message",
-      "send": "Send Message"
-    },
+    "email": { "title": "Email", "value": "support@example.com" },
+    "chat": { "title": "Live Chat", "whatsapp": "Chat on WhatsApp" },
+    "form": { "name": "Name", "email": "Email", "message": "Message", "send": "Send Message" },
     "social": {
       "title": "Follow Us",
       "facebook": "Follow us on Facebook",
@@ -121,10 +126,7 @@
     "strengthWeak": "Weak",
     "strengthMedium": "Medium",
     "strengthStrong": "Strong",
-    "detected": {
-      "email": "Email",
-      "phone": "Phone"
-    }
+    "detected": { "email": "Email", "phone": "Phone" }
   },
   "cart": {
     "title": "Shopping Cart",
@@ -168,13 +170,26 @@
     "price": "Price"
   },
   "footer": {
-    "description": "Quality clothing and accessories for children, designed with love and attention to detail.",
+    "newsletter": {
+      "eyebrow": "Stay in the loop",
+      "title1": "Letters from",
+      "title2": "the studio.",
+      "placeholder": "your@email.com",
+      "subscribe": "Subscribe"
+    },
+    "description": "Thoughtfully designed essentials for kids, made with care.",
+    "shop": "Shop",
+    "allProducts": "All products",
+    "newArrivals": "New arrivals",
+    "favorites": "Favorites",
     "information": "Information",
+    "about": "About",
     "terms": "Terms of Sale",
     "privacy": "Privacy Policy",
     "legal": "Legal Notice",
     "contact": "Contact",
-    "contactForm": "Contact Form",
+    "contactForm": "Contact",
+    "connect": "Connect",
     "copyright": "All rights reserved.",
     "securePayment": "Secure Payment",
     "fastDelivery": "Fast Delivery"

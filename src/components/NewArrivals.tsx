@@ -11,6 +11,7 @@ import {
 
 const NewArrivals = () => {
   const { language, translations } = useLanguage();
+  const t = translations?.home?.newArrivals || {};
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['newArrivals'],
@@ -43,17 +44,17 @@ const NewArrivals = () => {
       <div className="flex items-end justify-between mb-12 gap-6">
         <div>
           <p className="text-[11px] tracking-[0.3em] uppercase text-muted-foreground mb-3">
-            Just landed
+            {t.eyebrow || 'Just landed'}
           </p>
           <h2 className="font-display text-3xl lg:text-5xl font-light text-ink text-balance">
-            {translations?.home?.newArrivals?.title || "New arrivals"}
+            {t.title || "New arrivals"}
           </h2>
         </div>
         <Link
           to={`/${language}/shop`}
           className="hidden md:inline-flex items-center text-sm tracking-wider uppercase font-medium text-ink border-b border-ink pb-1 hover:text-primary hover:border-primary transition-colors"
         >
-          {translations?.home?.newArrivals?.viewAll || "View all"}
+          {t.viewAll || "View all"}
         </Link>
       </div>
 
