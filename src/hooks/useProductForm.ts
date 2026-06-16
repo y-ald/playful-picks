@@ -231,6 +231,7 @@ export const useProductForm = () => {
     handleMainImageChange,
     handleAdditionalImagesChange,
     handleRemoveAdditionalImage,
+    handleEnhancedMainImage,
     submitProduct
   };
 };
