@@ -25,6 +25,10 @@ export type ProductEditState = {
   additionalImages: File[];
   additionalImagePreviews: string[];
   existingAdditionalImages: string[];
+  /** New original file to upload (when enhancement happened on a freshly picked file) */
+  originalImage: File | null;
+  /** Existing original URL to keep (or set when enhancing the previously-saved photo) */
+  originalImageUrlKeep: string | null;
 };
 
 export const useProductEdit = (product: Product, onComplete: () => void) => {
@@ -35,17 +39,20 @@ export const useProductEdit = (product: Product, onComplete: () => void) => {
     additionalImages: [],
     additionalImagePreviews: product.additional_images || [],
     existingAdditionalImages: product.additional_images || [],
+    originalImage: null,
+    originalImageUrlKeep: (product as any).original_image_url ?? null,
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    // Reset image state when product changes
     setImageState({
       mainImage: null,
       mainImagePreview: product.image_url,
       additionalImages: [],
       additionalImagePreviews: product.additional_images || [],
       existingAdditionalImages: product.additional_images || [],
+      originalImage: null,
+      originalImageUrlKeep: (product as any).original_image_url ?? null,
     });
   }, [product]);
 
@@ -54,6 +61,20 @@ export const useProductEdit = (product: Product, onComplete: () => void) => {
       ...prev,
       mainImage: file,
       mainImagePreview: file ? URL.createObjectURL(file) : product.image_url,
+      originalImage: null,
+    }));
+  };
+
+  const handleEnhancedMainImage = (
+    enhancedFile: File,
+    originalSource: { file: File | null; url: string | null },
+  ) => {
+    setImageState(prev => ({
+      ...prev,
+      mainImage: enhancedFile,
+      mainImagePreview: URL.createObjectURL(enhancedFile),
+      originalImage: originalSource.file ?? prev.originalImage,
+      originalImageUrlKeep: originalSource.url ?? prev.originalImageUrlKeep,
     }));
   };
 
