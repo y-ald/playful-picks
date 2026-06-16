@@ -31,6 +31,7 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
     handleMainImageChange, 
     handleAdditionalImagesChange, 
     handleRemoveAdditionalImage, 
+    handleEnhancedMainImage,
     updateProduct 
   } = useProductEdit(product, onUpdate);
   
