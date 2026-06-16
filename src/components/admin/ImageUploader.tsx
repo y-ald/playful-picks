@@ -62,6 +62,17 @@ export function ImageUploader({
             >
               Remove Image
             </Button>
+            {onEnhancedMainImage && (
+              <Button
+                type="button"
+                size="sm"
+                className="mt-2 ml-2"
+                onClick={() => setEnhanceOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                Enhance to studio photo
+              </Button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-4">
