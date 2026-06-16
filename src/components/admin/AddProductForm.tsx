@@ -43,6 +43,8 @@ export function AddProductForm() {
           onMainImageChange={handleMainImageChange}
           onAdditionalImagesChange={handleAdditionalImagesChange}
           onRemoveAdditionalImage={handleRemoveAdditionalImage}
+          mainImageFile={imageState.mainImage}
+          onEnhancedMainImage={handleEnhancedMainImage}
         />
 
         <ProductFieldsGrid form={form} />
