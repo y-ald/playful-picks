@@ -1,7 +1,9 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Sparkles } from "lucide-react";
+import { EnhancePhotoDialog } from "./EnhancePhotoDialog";
 
 interface ImageUploaderProps {
   mainImagePreview: string | null;
@@ -9,15 +11,21 @@ interface ImageUploaderProps {
   onMainImageChange: (file: File | null) => void;
   onAdditionalImagesChange: (files: File[]) => void;
   onRemoveAdditionalImage: (index: number) => void;
+  mainImageFile?: File | null;
+  onEnhancedMainImage?: (enhancedFile: File, originalSource: { file: File | null; url: string | null }) => void;
 }
 
-export function ImageUploader({ 
-  mainImagePreview, 
-  additionalImagePreviews, 
-  onMainImageChange, 
+export function ImageUploader({
+  mainImagePreview,
+  additionalImagePreviews,
+  onMainImageChange,
   onAdditionalImagesChange,
-  onRemoveAdditionalImage
+  onRemoveAdditionalImage,
+  mainImageFile,
+  onEnhancedMainImage,
 }: ImageUploaderProps) {
+  const [enhanceOpen, setEnhanceOpen] = useState(false);
+
   const handleMainFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onMainImageChange(e.target.files[0]);
@@ -54,6 +62,17 @@ export function ImageUploader({
             >
               Remove Image
             </Button>
+            {onEnhancedMainImage && (
+              <Button
+                type="button"
+                size="sm"
+                className="mt-2 ml-2"
+                onClick={() => setEnhanceOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                Enhance to studio photo
+              </Button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-4">
@@ -121,6 +140,16 @@ export function ImageUploader({
           </Button>
         </div>
       </div>
+
+      {onEnhancedMainImage && mainImagePreview && (
+        <EnhancePhotoDialog
+          open={enhanceOpen}
+          onOpenChange={setEnhanceOpen}
+          sourcePreview={mainImagePreview}
+          sourceFile={mainImageFile ?? null}
+          onAccept={onEnhancedMainImage}
+        />
+      )}
     </div>
   );
 }

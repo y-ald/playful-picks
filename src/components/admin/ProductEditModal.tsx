@@ -31,6 +31,7 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
     handleMainImageChange, 
     handleAdditionalImagesChange, 
     handleRemoveAdditionalImage, 
+    handleEnhancedMainImage,
     updateProduct 
   } = useProductEdit(product, onUpdate);
   
@@ -78,6 +79,8 @@ export function ProductEditModal({ product, isOpen, onClose, onUpdate }: Product
               onMainImageChange={handleMainImageChange}
               onAdditionalImagesChange={handleAdditionalImagesChange}
               onRemoveAdditionalImage={handleRemoveAdditionalImage}
+              mainImageFile={imageState.mainImage}
+              onEnhancedMainImage={handleEnhancedMainImage}
             />
 
             <ProductFieldsGrid form={form} />

@@ -20,6 +20,7 @@ export type ProductFormState = {
   mainImagePreview: string | null;
   additionalImages: File[];
   additionalImagePreviews: string[];
+  originalImage: File | null;
 };
 
 export const useProductForm = () => {
@@ -29,6 +30,7 @@ export const useProductForm = () => {
     mainImagePreview: null,
     additionalImages: [],
     additionalImagePreviews: [],
+    originalImage: null,
   });
   const { toast } = useToast();
 
@@ -37,6 +39,19 @@ export const useProductForm = () => {
       ...prev,
       mainImage: file,
       mainImagePreview: file ? URL.createObjectURL(file) : null,
+      originalImage: null,
+    }));
+  };
+
+  const handleEnhancedMainImage = (
+    enhancedFile: File,
+    originalSource: { file: File | null; url: string | null },
+  ) => {
+    setImageState(prev => ({
+      ...prev,
+      mainImage: enhancedFile,
+      mainImagePreview: URL.createObjectURL(enhancedFile),
+      originalImage: originalSource.file ?? prev.originalImage ?? prev.mainImage,
     }));
   };
 
@@ -145,21 +160,23 @@ export const useProductForm = () => {
     setIsSubmitting(true);
     
     try {
-      let mainImageUrl = null;
+      let mainImageUrl: string | null = null;
+      let originalImageUrl: string | null = null;
       let additionalImageUrls: string[] = [];
       
-      // Upload main image
       if (imageState.mainImage) {
         mainImageUrl = await uploadImage(imageState.mainImage, 'products');
       }
+
+      if (imageState.originalImage) {
+        originalImageUrl = await uploadImage(imageState.originalImage, 'products');
+      }
       
-      // Upload additional images
       if (imageState.additionalImages.length > 0) {
         const uploadPromises = imageState.additionalImages.map(img => uploadImage(img, 'products'));
         additionalImageUrls = await Promise.all(uploadPromises);
       }
       
-      // Insert product into the database with proper types
       const { data: product, error } = await supabase
         .from('products')
         .insert({
@@ -171,6 +188,7 @@ export const useProductForm = () => {
           category: data.category,
           age_range: data.age_range,
           image_url: mainImageUrl,
+          original_image_url: originalImageUrl,
           additional_images: additionalImageUrls,
         })
         .select()
@@ -185,12 +203,12 @@ export const useProductForm = () => {
         description: `${data.name} has been added to inventory`,
       });
       
-      // Reset image state
       setImageState({
         mainImage: null,
         mainImagePreview: null,
         additionalImages: [],
         additionalImagePreviews: [],
+        originalImage: null,
       });
       
       return true;
@@ -213,6 +231,7 @@ export const useProductForm = () => {
     handleMainImageChange,
     handleAdditionalImagesChange,
     handleRemoveAdditionalImage,
+    handleEnhancedMainImage,
     submitProduct
   };
 };

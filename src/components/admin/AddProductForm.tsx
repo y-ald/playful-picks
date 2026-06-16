@@ -11,7 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function AddProductForm() {
   const { imageState, isSubmitting, handleMainImageChange, handleAdditionalImagesChange, 
-    handleRemoveAdditionalImage, submitProduct } = useProductForm();
+    handleRemoveAdditionalImage, handleEnhancedMainImage, submitProduct } = useProductForm();
   const { translations } = useLanguage();
   
   const form = useForm<ProductFormValues>({
@@ -43,6 +43,8 @@ export function AddProductForm() {
           onMainImageChange={handleMainImageChange}
           onAdditionalImagesChange={handleAdditionalImagesChange}
           onRemoveAdditionalImage={handleRemoveAdditionalImage}
+          mainImageFile={imageState.mainImage}
+          onEnhancedMainImage={handleEnhancedMainImage}
         />
 
         <ProductFieldsGrid form={form} />
