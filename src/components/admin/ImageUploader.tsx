@@ -140,6 +140,16 @@ export function ImageUploader({
           </Button>
         </div>
       </div>
+
+      {onEnhancedMainImage && mainImagePreview && (
+        <EnhancePhotoDialog
+          open={enhanceOpen}
+          onOpenChange={setEnhanceOpen}
+          sourcePreview={mainImagePreview}
+          sourceFile={mainImageFile ?? null}
+          onAccept={onEnhancedMainImage}
+        />
+      )}
     </div>
   );
 }
