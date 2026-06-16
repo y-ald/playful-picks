@@ -20,6 +20,7 @@ export type ProductFormState = {
   mainImagePreview: string | null;
   additionalImages: File[];
   additionalImagePreviews: string[];
+  originalImage: File | null;
 };
 
 export const useProductForm = () => {
@@ -29,6 +30,7 @@ export const useProductForm = () => {
     mainImagePreview: null,
     additionalImages: [],
     additionalImagePreviews: [],
+    originalImage: null,
   });
   const { toast } = useToast();
 
@@ -37,6 +39,19 @@ export const useProductForm = () => {
       ...prev,
       mainImage: file,
       mainImagePreview: file ? URL.createObjectURL(file) : null,
+      originalImage: null,
+    }));
+  };
+
+  const handleEnhancedMainImage = (
+    enhancedFile: File,
+    originalSource: { file: File | null; url: string | null },
+  ) => {
+    setImageState(prev => ({
+      ...prev,
+      mainImage: enhancedFile,
+      mainImagePreview: URL.createObjectURL(enhancedFile),
+      originalImage: originalSource.file ?? prev.originalImage ?? prev.mainImage,
     }));
   };
 
