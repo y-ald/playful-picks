@@ -11,7 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function AddProductForm() {
   const { imageState, isSubmitting, handleMainImageChange, handleAdditionalImagesChange, 
-    handleRemoveAdditionalImage, submitProduct } = useProductForm();
+    handleRemoveAdditionalImage, handleEnhancedMainImage, submitProduct } = useProductForm();
   const { translations } = useLanguage();
   
   const form = useForm<ProductFormValues>({
