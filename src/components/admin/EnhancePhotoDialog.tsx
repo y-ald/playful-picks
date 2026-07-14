@@ -146,7 +146,7 @@ export function EnhancePhotoDialog({ open, onOpenChange, sourcePreview, sourceFi
             className="text-xs font-mono"
           />
           <p className="text-[10px] text-muted-foreground mt-1">
-            Powered by Nano Banana 2 (Gemini 3.1 Flash Image). The original photo is preserved separately.
+            Powered by Google AI Studio (Gemini 2.5 Flash Image — Nano Banana). The original photo is preserved separately.
           </p>
         </div>
 
