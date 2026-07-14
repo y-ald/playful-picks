@@ -9,13 +9,16 @@ const DEFAULT_PROMPT = `Transform this into a professional e-commerce product ph
 - Ultra sharp focus, true-to-life colors, high resolution
 - No props, no text, no watermark, no people, no mannequin, no hangers`;
 
+// Google AI Studio (Gemini API) — Nano Banana image model
+const MODEL = 'gemini-2.5-flash-image-preview';
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   try {
-    const apiKey = Deno.env.get('LOVABLE_API_KEY');
+    const apiKey = Deno.env.get('GOOGLE_AI_STUDIO_API_KEY');
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY missing' }), {
+      return new Response(JSON.stringify({ error: 'GOOGLE_AI_STUDIO_API_KEY missing' }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -51,48 +54,48 @@ Deno.serve(async (req) => {
       });
     }
 
-    const dataUrl = `data:${mimeType || 'image/jpeg'};base64,${imageBase64}`;
     const finalPrompt = (prompt && prompt.trim()) || DEFAULT_PROMPT;
 
-    const upstream = await fetch('https://ai.gateway.lovable.dev/v1/images/generations', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-3.1-flash-image-preview',
-        messages: [
-          {
+    const upstream = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
             role: 'user',
-            content: [
-              { type: 'text', text: finalPrompt },
-              { type: 'image_url', image_url: { url: dataUrl } },
+            parts: [
+              { text: finalPrompt },
+              { inline_data: { mime_type: mimeType || 'image/jpeg', data: imageBase64 } },
             ],
-          },
-        ],
-        modalities: ['image', 'text'],
-      }),
-    });
+          }],
+          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
+        }),
+      },
+    );
 
     if (!upstream.ok) {
       const errText = await upstream.text();
-      console.error('Gateway error', upstream.status, errText);
+      console.error('Google AI Studio error', upstream.status, errText);
       return new Response(JSON.stringify({ error: 'Image enhancement failed', detail: errText }), {
         status: upstream.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
     const result = await upstream.json();
-    const b64 = result?.data?.[0]?.b64_json;
+    const parts = result?.candidates?.[0]?.content?.parts ?? [];
+    const imagePart = parts.find((p: any) => p?.inlineData?.data || p?.inline_data?.data);
+    const b64 = imagePart?.inlineData?.data || imagePart?.inline_data?.data;
+    const outMime = imagePart?.inlineData?.mimeType || imagePart?.inline_data?.mime_type || 'image/png';
+
     if (!b64) {
-      console.error('No image in response', JSON.stringify(result).slice(0, 500));
+      console.error('No image in response', JSON.stringify(result).slice(0, 800));
       return new Response(JSON.stringify({ error: 'No image returned', raw: result }), {
         status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ imageBase64: b64, mimeType: 'image/png' }), {
+    return new Response(JSON.stringify({ imageBase64: b64, mimeType: outMime }), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {
