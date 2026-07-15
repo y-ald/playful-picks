@@ -5,6 +5,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductFormValues } from '@/components/admin/ProductFieldsGrid';
 import { productSchema } from '@/hooks/useProductForm';
+import {
+  PRODUCTS_BUCKET,
+  mainImagePath,
+  originalImagePath,
+  additionalImagePath,
+} from '@/lib/productImages';
 
 export type Product = {
   id: string;
@@ -159,26 +165,28 @@ export const useProductEdit = (product: Product, onComplete: () => void) => {
     });
   };
 
-  const uploadImage = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    
+  const uploadImage = async (file: File, path: string) => {
     const resizedImageBlob = await resizeImage(file);
-    const resizedImageFile = new File([resizedImageBlob], fileName, {
+    const resizedImageFile = new File([resizedImageBlob], path.split('/').pop() as string, {
       type: file.type,
     });
     
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(b => b.name === PRODUCTS_BUCKET)) {
+      await supabase.storage.createBucket(PRODUCTS_BUCKET, { public: true });
+    }
+    
     const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(fileName, resizedImageFile);
+      .from(PRODUCTS_BUCKET)
+      .upload(path, resizedImageFile, { upsert: false });
       
     if (uploadError) {
       throw uploadError;
     }
     
     const { data: publicURL } = supabase.storage
-      .from('products')
-      .getPublicUrl(fileName);
+      .from(PRODUCTS_BUCKET)
+      .getPublicUrl(path);
       
     return publicURL.publicUrl;
   };
@@ -192,15 +200,17 @@ export const useProductEdit = (product: Product, onComplete: () => void) => {
       let additionalImageUrls: string[] = [...imageState.existingAdditionalImages];
       
       if (imageState.mainImage) {
-        mainImageUrl = await uploadImage(imageState.mainImage);
+        mainImageUrl = await uploadImage(imageState.mainImage, mainImagePath(product.id, imageState.mainImage));
       }
 
       if (imageState.originalImage) {
-        originalImageUrl = await uploadImage(imageState.originalImage);
+        originalImageUrl = await uploadImage(imageState.originalImage, originalImagePath(product.id, imageState.originalImage));
       }
       
       if (imageState.additionalImages.length > 0) {
-        const uploadPromises = imageState.additionalImages.map(img => uploadImage(img));
+        const uploadPromises = imageState.additionalImages.map(img =>
+          uploadImage(img, additionalImagePath(product.id, img)),
+        );
         const newAdditionalUrls = await Promise.all(uploadPromises);
         additionalImageUrls = [...additionalImageUrls, ...newAdditionalUrls];
       }

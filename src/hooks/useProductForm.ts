@@ -4,6 +4,12 @@ import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductFormValues } from '@/components/admin/ProductFieldsGrid';
+import {
+  PRODUCTS_BUCKET,
+  mainImagePath,
+  originalImagePath,
+  additionalImagePath,
+} from '@/lib/productImages';
 
 export const productSchema = z.object({
   name: z.string().min(3, { message: 'Product name is required' }),
@@ -125,33 +131,30 @@ export const useProductForm = () => {
     });
   };
 
-  const uploadImage = async (file: File, bucket: string) => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    
+  const uploadImage = async (file: File, path: string) => {
     // Resize image before upload
     const resizedImageBlob = await resizeImage(file);
-    const resizedImageFile = new File([resizedImageBlob], fileName, {
+    const resizedImageFile = new File([resizedImageBlob], path.split('/').pop() as string, {
       type: file.type,
     });
     
     // Check if products bucket exists, create it if not
     const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find(b => b.name === bucket)) {
-      await supabase.storage.createBucket(bucket, { public: true });
+    if (!buckets?.find(b => b.name === PRODUCTS_BUCKET)) {
+      await supabase.storage.createBucket(PRODUCTS_BUCKET, { public: true });
     }
     
     const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, resizedImageFile);
+      .from(PRODUCTS_BUCKET)
+      .upload(path, resizedImageFile, { upsert: false });
       
     if (uploadError) {
       throw uploadError;
     }
     
     const { data: publicURL } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
+      .from(PRODUCTS_BUCKET)
+      .getPublicUrl(path);
       
     return publicURL.publicUrl;
   };
@@ -160,26 +163,35 @@ export const useProductForm = () => {
     setIsSubmitting(true);
     
     try {
+      // Generate the product id up-front so all its images can be grouped
+      // under a single storage folder: products/{productId}/...
+      const productId =
+        (crypto as any)?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
       let mainImageUrl: string | null = null;
       let originalImageUrl: string | null = null;
       let additionalImageUrls: string[] = [];
       
       if (imageState.mainImage) {
-        mainImageUrl = await uploadImage(imageState.mainImage, 'products');
+        mainImageUrl = await uploadImage(imageState.mainImage, mainImagePath(productId, imageState.mainImage));
       }
 
       if (imageState.originalImage) {
-        originalImageUrl = await uploadImage(imageState.originalImage, 'products');
+        originalImageUrl = await uploadImage(imageState.originalImage, originalImagePath(productId, imageState.originalImage));
       }
       
       if (imageState.additionalImages.length > 0) {
-        const uploadPromises = imageState.additionalImages.map(img => uploadImage(img, 'products'));
+        const uploadPromises = imageState.additionalImages.map(img =>
+          uploadImage(img, additionalImagePath(productId, img)),
+        );
         additionalImageUrls = await Promise.all(uploadPromises);
       }
       
       const { data: product, error } = await supabase
         .from('products')
         .insert({
+          id: productId,
           name: data.name,
           description: data.description,
           price: data.price,
