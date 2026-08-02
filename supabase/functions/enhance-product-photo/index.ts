@@ -1,4 +1,4 @@
-import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const DEFAULT_PROMPT = `Transform this into a professional e-commerce product photo for a high-end children's boutique catalog (Bonpoint / Jacadi / Bonton aesthetic).
@@ -9,8 +9,9 @@ const DEFAULT_PROMPT = `Transform this into a professional e-commerce product ph
 - Ultra sharp focus, true-to-life colors, high resolution
 - No props, no text, no watermark, no people, no mannequin, no hangers`;
 
-// Google AI Studio (Gemini API) — Nano Banana image model
-const MODEL = 'gemini-2.5-flash-image-preview';
+// Google AI Studio (Gemini API) — Nano Banana image model.
+// (The old `...-preview` alias was retired; this is the stable GA name.)
+const MODEL = 'gemini-2.5-flash-image';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
